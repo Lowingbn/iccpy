@@ -107,7 +107,7 @@ def read_snapshot_file(filename, physical=False, ics=False, cooling=False):
   
   return header, res
 
-def write_snapshot_file(filename, header, data, physical=True, cooling=False, ics=False):
+def write_snapshot_file(filename, header, data, physical=True, cooling=False, ics=False, gamma=1.66667):
   """ Write a binary gadget file (unformatted fortran) """
 
   # do some checks on the header
@@ -176,7 +176,10 @@ def write_snapshot_file(filename, header, data, physical=True, cooling=False, ic
     if ngas > 0:
         data['sml']   = data['sml'] / (lunit/(1.+z))
         data['rho']   = data['rho'] / (munit / (lunit * mpc / (1 + z))**3.0 * msun)
-        data['therm'] = data['therm'] / (vunit**2 * (1 + z))
+        if header['flag_entropy_instead_u']==0:
+          data['therm'] = data['therm'] / (vunit**2 * (1 + z))
+        else:
+          data['therm'] = data['therm'] / (vunit**2 * (1 + z)) * (munit / (lunit * mpc / (1 + z))**3.0 * msun)**(gamma-1)
 
     data['vel']   = data['vel'] / (vunit/np.sqrt(1 + z))
     header['mass']  = [m / munit for m in header['mass']]
