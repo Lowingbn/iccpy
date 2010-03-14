@@ -11,7 +11,14 @@ def read_group_file(filename, ids=None):
 	num_ids = np.fromfile(f, uint32, 1)[0]
 	num_ids_tot = np.fromfile(f, uint64, 1)[0]
 	num_files = np.fromfile(f, uint32, 1)[0]
-
+	
+	props = {}
+	props['num_groups'] = num_groups
+	props['num_groups_tot'] = num_groups_tot
+	props['num_ids'] = num_ids
+	props['num_ids_tot'] = num_ids_tot
+	props['num_files'] = num_files
+	
 	res = {}
 	
 	res['npart'] = np.fromfile(f, uint32, num_groups)
@@ -30,7 +37,7 @@ def read_group_file(filename, ids=None):
 
 	f.close()
 	
-	return num_groups, res
+	return props, res
 	
 def read_subfind_file(filename, ids=None):
 	""" Reads a binary Subfind group file """
@@ -42,7 +49,16 @@ def read_subfind_file(filename, ids=None):
 	num_ids_tot = np.fromfile(f, uint64, 1)[0]
 	num_files = np.fromfile(f, uint32, 1)[0]
 	num_subgroups = np.fromfile(f, uint32, 1)[0]
-	num_subgroups_tot = np.fromfile(f, uint32, 1)[0]	
+	num_subgroups_tot = np.fromfile(f, uint32, 1)[0]
+	
+	props = {}
+	props['num_groups'] = num_groups
+	props['num_groups_tot'] = num_groups_tot
+	props['num_ids'] = num_ids
+	props['num_ids_tot'] = num_ids_tot
+	props['num_files'] = num_files
+	props['num_subgroups'] = num_subgroups
+	props['num_subgroups_tot'] = num_subgroups_tot	
 	
 	groups = {}
 	
@@ -66,13 +82,10 @@ def read_subfind_file(filename, ids=None):
 	
 	if ids is not None:
 		groups['ids'] = []
-		for offset, len in zip(groups['offsets'], groups['npart']):
-			groups['ids'].append(ids[offset:offset+len])
+		for offset, length in zip(groups['offsets'], groups['npart']):
+			groups['ids'].append(ids[offset:offset+length])
 	
 	subgroups = {}
-	
-	group_idx = [ [i]*x for i,x in enumerate(groups['num_subgroups']) ]
-	subgroups['group_idx'] = np.concatenate(group_idx)
 	
 	subgroups['npart'] = np.fromfile(f, uint32, num_subgroups)
 	subgroups['offsets'] = np.fromfile(f, uint32, num_subgroups)
@@ -99,10 +112,10 @@ def read_subfind_file(filename, ids=None):
 
 	if ids is not None:
 		subgroups['ids'] = []
-		for offset, len in zip(groups['offsets'], subgroups['npart']):
-			subgroups['ids'].append(ids[offset:offset+len])
-				
-	return num_groups, groups, num_subgroups, subgroups
+		for offset, length in zip(subgroups['offsets'], subgroups['npart']):
+			subgroups['ids'].append(ids[offset:offset+length])
+							
+	return props, groups, subgroups
 	
 def read_IDs(filebase):
 	""" Reads a binary ID group file """

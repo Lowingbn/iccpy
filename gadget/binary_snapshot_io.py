@@ -236,7 +236,7 @@ def readIDs(f, count=None):
   
   count = int(count)    
   if data_size/4==count: dtype=uint32
-  elif data_size/4==count: dtype=uint64
+  elif data_size/8==count: dtype=uint64
   else: raise Exception('Incorrect number of IDs requested')
 
   ask_size = np.dtype(dtype).itemsize * count
