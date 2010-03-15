@@ -9,45 +9,45 @@ G = 6.674e-8
 m_p = 1.6726e-24 # proton mass in g
 
 def dens_profile(filename, centre, name='dens'):
-  x,y,z = read_cell_centres(filename)
-  names = ['node type', name, 'block size', 'pres']
-  res = read_flash_names(filename, names) 
+    x, y, z = read_cell_centres(filename)
+    names = ['node type', name, 'block size', 'pres']
+    res = read_flash_names(filename, names) 
 
-  var = res[name]
-  pres = res['pres']
-  node_type = res['node type']
-  time = res['time']
-  bs = res['block size']
+    var = res[name]
+    pres = res['pres']
+    node_type = res['node type']
+    time = res['time']
+    bs = res['block size']
 
-  from numpy import flatnonzero, unique, square, sqrt
-  # keep leaf nodes
-  indices = flatnonzero(node_type==1)
+    from numpy import flatnonzero, unique, square, sqrt
+    # keep leaf nodes
+    indices = flatnonzero(node_type == 1)
 
 
-  var  = var[indices].flatten()
-  pres = pres[indices].flatten()
-  x    =  x[indices].flatten()
-  y    =  y[indices].flatten()
-  z    =  z[indices].flatten()
-  cell_size   =  bs[indices,0]/8.0/kpc
+    var = var[indices].flatten()
+    pres = pres[indices].flatten()
+    x = x[indices].flatten()
+    y = y[indices].flatten()
+    z = z[indices].flatten()
+    cell_size = bs[indices, 0] / 8.0 / kpc
 
 #  if name=='dens':
 #    print var.shape
 #    print cell_size.shape
 #    print 'Total mass %e'% float((cell_size**3 * var).sum())
-  print 'cell size in', cell_size.min(), cell_size.max(),'^3 kpc'
+    print 'cell size in', cell_size.min(), cell_size.max(), '^3 kpc'
   
   
-  x = x-centre[0]
-  y = y-centre[1]
-  z = z-centre[2]
+    x = x - centre[0]
+    y = y - centre[1]
+    z = z - centre[2]
 
-  rad = sqrt(square(x) + square(y) + square(z))
+    rad = sqrt(square(x) + square(y) + square(z))
   
-  return rad, var, time
+    return rad, var, time
 
 def mass_profile(filename, centre):
-  x,y,z = read_cell_centres(filename)
+  x, y, z = read_cell_centres(filename)
   names = ['node type', 'dens', 'block size']
   res = read_flash_names(filename, names) 
 
@@ -58,21 +58,21 @@ def mass_profile(filename, centre):
 
   from numpy import flatnonzero, unique, square, sqrt
   # keep leaf nodes
-  indices = flatnonzero(node_type==1)
+  indices = flatnonzero(node_type == 1)
 
 
-  dens  = dens[indices].flatten()
-  x    =  x[indices].flatten()
-  y    =  y[indices].flatten()
-  z    =  z[indices].flatten()
-  cell_size   =  bs[indices,0]/8.0
-  cell_size = np.repeat(cell_size, 8**3)
+  dens = dens[indices].flatten()
+  x = x[indices].flatten()
+  y = y[indices].flatten()
+  z = z[indices].flatten()
+  cell_size = bs[indices, 0] / 8.0
+  cell_size = np.repeat(cell_size, 8 ** 3)
 
   mass = ((dens * cell_size) * cell_size) * cell_size
 
-  x = x-centre[0]
-  y = y-centre[1]
-  z = z-centre[2]
+  x = x - centre[0]
+  y = y - centre[1]
+  z = z - centre[2]
 
   rad = sqrt(square(x) + square(y) + square(z))
 
@@ -80,7 +80,7 @@ def mass_profile(filename, centre):
   rad = rad[idx]
   mass = np.cumsum(mass[idx])  
   
-  spots = np.flatnonzero((np.diff(rad)/ rad[1:])>0.01)
+  spots = np.flatnonzero((np.diff(rad) / rad[1:]) > 0.01)
   rad = rad[spots]
   mass = mass[spots]
 
@@ -88,7 +88,7 @@ def mass_profile(filename, centre):
 
 
 def cool_profile(filename, centre):
-  x,y,z = read_cell_centres(filename)
+  x, y, z = read_cell_centres(filename)
   names = ['node type', 'dens', 'block size', 'lamb', 'H   ', 'eint']
   res = read_flash_names(filename, names) 
 
@@ -101,24 +101,24 @@ def cool_profile(filename, centre):
 
   from numpy import flatnonzero, unique, square, sqrt
   # keep leaf nodes
-  indices = flatnonzero(node_type==1)
+  indices = flatnonzero(node_type == 1)
   
   
   dens = dens[indices].flatten()
   eint = eint[indices].flatten()
   lamb = lamb[indices].flatten()
-  h    = h[indices].flatten()
-  x    =  x[indices].flatten()
-  y    =  y[indices].flatten()
-  z    =  z[indices].flatten()
+  h = h[indices].flatten()
+  x = x[indices].flatten()
+  y = y[indices].flatten()
+  z = z[indices].flatten()
 
   
   n_h = (dens * h) / m_p
   cool = -lamb * n_h * n_h
-  t_cool = (eint * dens)/ cool 
-  x = x-centre[0]
-  y = y-centre[1]
-  z = z-centre[2]
+  t_cool = (eint * dens) / cool 
+  x = x - centre[0]
+  y = y - centre[1]
+  z = z - centre[2]
 
   rad = sqrt(square(x) + square(y) + square(z))
   print lamb.max()
@@ -126,7 +126,7 @@ def cool_profile(filename, centre):
 
 def vel_profile(filename, centre):
   """ get the velocity profile of the gas """
-  x,y,z = read_cell_centres(filename)
+  x, y, z = read_cell_centres(filename)
   names = ['node type', 'velx', 'vely', 'velz']
   res = read_flash_names(filename, names) 
 
@@ -139,25 +139,25 @@ def vel_profile(filename, centre):
 
   from numpy import flatnonzero, unique, square, sqrt
   # keep leaf nodes
-  indices = flatnonzero(node_type==1)
+  indices = flatnonzero(node_type == 1)
   
   
   velx = velx[indices].flatten()
   vely = vely[indices].flatten()
   velz = velz[indices].flatten()
   
-  x    =  x[indices].flatten()
-  y    =  y[indices].flatten()
-  z    =  z[indices].flatten()
+  x = x[indices].flatten()
+  y = y[indices].flatten()
+  z = z[indices].flatten()
 
-  x = x-centre[0]
-  y = y-centre[1]
-  z = z-centre[2]
+  x = x - centre[0]
+  y = y - centre[1]
+  z = z - centre[2]
 
   rad = sqrt(square(x) + square(y) + square(z))
 
   # radial vector
-  rx, ry, rz = x / rad, y/rad, z/rad
+  rx, ry, rz = x / rad, y / rad, z / rad
   # radial component of velocity
   vel = velx * rx + vely * ry + velz * rz  
   
@@ -165,7 +165,7 @@ def vel_profile(filename, centre):
 
 def entropy_profile(filename, centre):
   """ radial entropy profile """
-  x,y,z = read_cell_centres(filename)
+  x, y, z = read_cell_centres(filename)
   names = ['node type', 'dens', 'block size', 'pres']
 
   res = read_flash_names(filename, names) 
@@ -177,23 +177,23 @@ def entropy_profile(filename, centre):
 
   from numpy import flatnonzero, unique, square, sqrt
   # keep leaf nodes
-  indices = flatnonzero(node_type==1)
+  indices = flatnonzero(node_type == 1)
   
   
   dens = dens[indices].flatten()
   pres = pres[indices].flatten()
-  x    =  x[indices].flatten()
-  y    =  y[indices].flatten()
-  z    =  z[indices].flatten()
+  x = x[indices].flatten()
+  y = y[indices].flatten()
+  z = z[indices].flatten()
 
-  x = x-centre[0]
-  y = y-centre[1]
-  z = z-centre[2]
+  x = x - centre[0]
+  y = y - centre[1]
+  z = z - centre[2]
 
 
   rad = sqrt(square(x) + square(y) + square(z))
   
-  entropy = pres * (dens**-1.6666667)
+  entropy = pres * (dens ** -1.6666667)
   return rad, entropy, time
 
 def gravity_profile(filename, centre, n=100):
@@ -206,7 +206,7 @@ def gravity_profile(filename, centre, n=100):
   rad = rad[idx]
   gpot = gpot[idx]
 
-  log_rg = np.log(rad.max()/rad.min())
+  log_rg = np.log(rad.max() / rad.min())
   keep = (np.log(rad) - np.log(rad.min())) * (n / log_rg)
   keep = keep.astype(np.int32)
   print keep.shape
@@ -224,7 +224,7 @@ def gravity_profile(filename, centre, n=100):
   gpot = av_pot
   
   grav = np.zeros_like(gpot)
-  grav[1:] = np.diff(gpot)/np.diff(rad)
+  grav[1:] = np.diff(gpot) / np.diff(rad)
 
   return rad, grav, time
 
@@ -239,7 +239,7 @@ def gradp_profile(filename, centre):
   rad = rad[idx]
   pres = pres[idx]
 
-  log_rg = np.log(rad.max()/rad.min())
+  log_rg = np.log(rad.max() / rad.min())
   keep = (np.log(rad) - np.log(rad.min())) * (n / log_rg)
   keep = keep.astype(np.int32)
   print keep.shape
@@ -256,7 +256,7 @@ def gradp_profile(filename, centre):
   pres = av_pres
   
   gradp = np.zeros_like(pres)
-  gradp[1:] = np.diff(pres)/np.diff(rad)
+  gradp[1:] = np.diff(pres) / np.diff(rad)
 
   return rad, gradp, time
 
@@ -269,7 +269,7 @@ def rho_grav_profile(filename, centre):
 
   import numpy as np
   idx = np.searchsorted(rad, rad2)
-  idx = np.clip(idx, 0, grav.size-1)
+  idx = np.clip(idx, 0, grav.size - 1)
   grav = grav[idx]
   rho_grav = dens * grav
 
@@ -294,14 +294,14 @@ def cold_gas(filenames, eint_cutoff):
 
 
     # keep leaf nodes
-    indices = flatnonzero(node_type==1)
+    indices = flatnonzero(node_type == 1)
 
     dens = dens[indices].flatten()
     eint = eint[indices].flatten()
 
-    width = block_size[indices,0] / 8.0 # width in cm
-    width = np.repeat(width, 8**3)
-    mass = (dens*width) * width * width
+    width = block_size[indices, 0] / 8.0 # width in cm
+    width = np.repeat(width, 8 ** 3)
+    mass = (dens * width) * width * width
 
     indices = np.flatnonzero(eint < eint_cutoff)
     if indices.size > 0:
@@ -311,7 +311,7 @@ def cold_gas(filenames, eint_cutoff):
   return times, masses
 
 def cell_size_profile(filename, centre):
-  x,y,z = read_cell_centres(filename)
+  x, y, z = read_cell_centres(filename)
   names = ['node type', 'block size']
   res = read_flash_names(filename, names) 
 
@@ -321,18 +321,18 @@ def cell_size_profile(filename, centre):
 
   from numpy import flatnonzero, unique, square, sqrt, repeat
   # keep leaf nodes
-  indices = flatnonzero(node_type==1)
+  indices = flatnonzero(node_type == 1)
 
-  x    =  x[indices].flatten()
-  y    =  y[indices].flatten()
-  z    =  z[indices].flatten()
-  cell_size   =  bs[indices,0]/8.0
+  x = x[indices].flatten()
+  y = y[indices].flatten()
+  z = z[indices].flatten()
+  cell_size = bs[indices, 0] / 8.0
 
-  cell_size = repeat(cell_size, 8**3)
+  cell_size = repeat(cell_size, 8 ** 3)
 
-  x = x-centre[0]
-  y = y-centre[1]
-  z = z-centre[2]
+  x = x - centre[0]
+  y = y - centre[1]
+  z = z - centre[2]
 
   rad = sqrt(square(x) + square(y) + square(z))
   
