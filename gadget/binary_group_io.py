@@ -1,6 +1,6 @@
 import os.path
 import numpy as np
-from numpy import uint32, uint64, float64, float32
+from numpy import uint32, uint64, float32
 
 def read_group_file(filename, ids=None):
 	""" Reads a binary FoF group file """
@@ -24,16 +24,16 @@ def read_group_file(filename, ids=None):
 	res['npart'] = np.fromfile(f, uint32, num_groups)
 	offsets = np.fromfile(f, uint32, num_groups)
 	res['mass'] = np.fromfile(f, float32, num_groups)
-	res['com'] = np.fromfile(f, float32, 3*num_groups).reshape((num_groups, 3))
-	res['vel'] = np.fromfile(f, float32, 3*num_groups).reshape((num_groups, 3))
+	res['com'] = np.fromfile(f, float32, 3 * num_groups).reshape((num_groups, 3))
+	res['vel'] = np.fromfile(f, float32, 3 * num_groups).reshape((num_groups, 3))
 
-	res['typeLen'] = np.fromfile(f, uint32, 6*num_groups).reshape((num_groups, 6))
-	res['typeMass'] = np.fromfile(f, float32, 6*num_groups).reshape((num_groups, 6))
-  
+	res['typeLen'] = np.fromfile(f, uint32, 6 * num_groups).reshape((num_groups, 6))
+	res['typeMass'] = np.fromfile(f, float32, 6 * num_groups).reshape((num_groups, 6))
+	
 	if ids is not None:
 		res['id'] = []
 		for offset, len in zip(offsets, res['npart']):
-			res['id'].append(ids[offset:offset+len])
+			res['id'].append(ids[offset:offset + len])
 
 	f.close()
 	
@@ -65,7 +65,7 @@ def read_subfind_file(filename, ids=None):
 	groups['npart'] = np.fromfile(f, uint32, num_groups)
 	groups['offsets'] = np.fromfile(f, uint32, num_groups)
 	groups['mass'] = np.fromfile(f, float32, num_groups)
-	groups['pot_min'] = np.fromfile(f, float32, 3*num_groups).reshape((num_groups, 3))
+	groups['pot_min'] = np.fromfile(f, float32, 3 * num_groups).reshape((num_groups, 3))
 	
 	groups['mass_mean_200'] = np.fromfile(f, float32, num_groups)
 	groups['radius_mean_200'] = np.fromfile(f, float32, num_groups)
@@ -83,7 +83,7 @@ def read_subfind_file(filename, ids=None):
 	if ids is not None:
 		groups['ids'] = []
 		for offset, length in zip(groups['offsets'], groups['npart']):
-			groups['ids'].append(ids[offset:offset+length])
+			groups['ids'].append(ids[offset:offset + length])
 	
 	subgroups = {}
 	
@@ -91,10 +91,10 @@ def read_subfind_file(filename, ids=None):
 	subgroups['offsets'] = np.fromfile(f, uint32, num_subgroups)
 	subgroups['parent'] = np.fromfile(f, uint32, num_subgroups)
 	subgroups['mass'] = np.fromfile(f, float32, num_subgroups)
-	subgroups['pot_min'] = np.fromfile(f, float32, 3*num_subgroups).reshape((num_subgroups, 3))
-	subgroups['vel'] = np.fromfile(f, float32, 3*num_subgroups).reshape((num_subgroups, 3))
-	subgroups['com'] = np.fromfile(f, float32, 3*num_subgroups).reshape((num_subgroups, 3))
-	subgroups['spin'] = np.fromfile(f, float32, 3*num_subgroups).reshape((num_subgroups, 3))
+	subgroups['pot_min'] = np.fromfile(f, float32, 3 * num_subgroups).reshape((num_subgroups, 3))
+	subgroups['vel'] = np.fromfile(f, float32, 3 * num_subgroups).reshape((num_subgroups, 3))
+	subgroups['com'] = np.fromfile(f, float32, 3 * num_subgroups).reshape((num_subgroups, 3))
+	subgroups['spin'] = np.fromfile(f, float32, 3 * num_subgroups).reshape((num_subgroups, 3))
 	
 	subgroups['vel_disp'] = np.fromfile(f, float32, num_subgroups)
 	subgroups['vel_max'] = np.fromfile(f, float32, num_subgroups)
@@ -103,8 +103,8 @@ def read_subfind_file(filename, ids=None):
 	
 	#From length of file we can work out size of id
 	filelength = os.path.getsize(filename)	
-	if filelength==32 + 16*4*num_groups + 23*4*num_subgroups: idType = uint64
-	elif filelength==32 + 16*4*num_groups + 22*4*num_subgroups: idType = uint32
+	if filelength == 32 + 16 * 4 * num_groups + 23 * 4 * num_subgroups: idType = uint64
+	elif filelength == 32 + 16 * 4 * num_groups + 22 * 4 * num_subgroups: idType = uint32
 	else: raise Exception('Unable to determine size of ID type from file length')
 	
 	subgroups['most_bound_particle'] = np.fromfile(f, idType, num_subgroups)
@@ -113,7 +113,7 @@ def read_subfind_file(filename, ids=None):
 	if ids is not None:
 		subgroups['ids'] = []
 		for offset, length in zip(subgroups['offsets'], subgroups['npart']):
-			subgroups['ids'].append(ids[offset:offset+length])
+			subgroups['ids'].append(ids[offset:offset + length])
 							
 	return props, groups, subgroups
 	
@@ -129,8 +129,8 @@ def read_IDs(filebase):
 	
 	filelength = os.path.getsize(filename)
 	
-	if filelength==28 + 8*num_ids: idType = uint64
-	elif filelength==28 + 4*num_ids: idType = uint32
+	if filelength == 28 + 8 * num_ids: idType = uint64
+	elif filelength == 28 + 4 * num_ids: idType = uint32
 	else: raise Exception('Unable to determine size of ID type from file length')
 	
 	idList = []
