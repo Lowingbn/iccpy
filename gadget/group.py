@@ -20,44 +20,44 @@ class SubfindGroup:
         self.v_max = 0
         self.ids = None
         
-def load_FoF_groups(directory, snapshot_num, loadIDs=False):
+def load_FoF_groups(directory, snapshot_num, loadIDs=False, swap_endian=False):
     if loadIDs:
         filebase = "%s/groups_%03d/group_ids_%03d" % (directory, snapshot_num, snapshot_num)
-        ids = binary_group_io.read_IDs(filebase)
+        ids = binary_group_io.read_IDs(filebase, swap_endian)
     else:
         ids = None
         
     #Load first file
     filename = "%s/groups_%03d/group_tab_%03d.0" % (directory, snapshot_num, snapshot_num)
-    props = binary_group_io.read_group_file(filename, None)[0]
+    props = binary_group_io.read_group_file(filename, None, swap_endian)[0]
     
     groups = []
     
     for i in range(props['num_files']):
         filename = "%s/groups_%03d/group_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
-        groups_i = binary_group_io.read_group_file(filename, ids)[1]
+        groups_i = binary_group_io.read_group_file(filename, ids, swap_endian)[1]
         
         groups.extend(convert_to_fof_groups(groups_i, snapshot_num))
         
     return groups
             
-def load_subfind_groups(directory, snapshot_num, loadIDs=False):
+def load_subfind_groups(directory, snapshot_num, loadIDs=False, swap_endian=False):
     if loadIDs:
         filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
-        ids = binary_group_io.read_IDs(filebase)
+        ids = binary_group_io.read_IDs(filebase, swap_endian)
     else:
         ids = None
         
     #Load first file
     filename = "%s/groups_%03d/subhalo_tab_%03d.0" % (directory, snapshot_num, snapshot_num)
-    props = binary_group_io.read_subfind_file(filename, None)[0]
+    props = binary_group_io.read_subfind_file(filename, None, swap_endian)[0]
     
     groups = []
     subgroups = []
     
     for i in range(props['num_files']):
         filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
-        groups_i, subgroups_i = binary_group_io.read_subfind_file(filename, ids)[1:3]
+        groups_i, subgroups_i = binary_group_io.read_subfind_file(filename, ids, swap_endian)[1:3]
         
         groups.extend(convert_to_fof_groups(groups_i, snapshot_num))
         subgroups.extend(convert_to_subfind_groups(subgroups_i, snapshot_num))
