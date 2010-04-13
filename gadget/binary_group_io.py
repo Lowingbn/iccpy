@@ -1,16 +1,19 @@
 import os.path
 import numpy as np
 
-def read_group_file(filename, ids=None, swap_endian=False):
+def read_group_file(filename, ids=None, endianness='little'):
 	""" Reads a binary FoF group file """
 	f = open(filename, mode='rb')
 	
-	if swap_endian:
-		u32 = 'u4'
-		f32 = 'f4'
-	else:
+	if endianness=='little':
+		u32 = '<u4'
+		f32 = '<f4'
+	elif endianness=='big':
 		u32 = '>u4'
 		f32 = '>f4'
+	elif endianness=='native':
+		u32 = 'u4'
+		f32 = 'f4'
 
 	num_groups = np.fromfile(f, u32, 1)[0]
 	num_groups_tot = np.fromfile(f, u32, 1)[0]
@@ -45,18 +48,22 @@ def read_group_file(filename, ids=None, swap_endian=False):
 	
 	return props, res
 	
-def read_subfind_file(filename, ids=None, swap_endian=None):
+def read_subfind_file(filename, ids=None, endianness='little'):
 	""" Reads a binary Subfind group file """
 	f = open(filename, mode='rb')
 	
-	if swap_endian:
-		u32 = 'u4'
-		f32 = 'f4'
-		u64 = 'u8'
-	else:
+	if endianness=='little':
+		u32 = '<u4'
+		f32 = '<f4'
+		u64 = '<u8'
+	elif endianness=='big':
 		u32 = '>u4'
 		f32 = '>f4'
 		u64 = '>u8'
+	elif endianness=='native':
+		u32 = 'u4'
+		f32 = 'f4'
+		u64 = 'u8'
 	
 	num_groups = np.fromfile(f, u32, 1)[0]
 	num_groups_tot = np.fromfile(f, u32, 1)[0]
@@ -132,14 +139,17 @@ def read_subfind_file(filename, ids=None, swap_endian=None):
 							
 	return props, groups, subgroups
 	
-def read_IDs(filebase, swap_endian=False):
+def read_IDs(filebase, endianness='little'):
 	""" Reads a binary ID group file """
-	if swap_endian:
-		u32 = 'u4'
-		u64 = 'u8'
-	else:
+	if endianness=='little':
+		u32 = '<u4'
+		u64 = '<u8'
+	elif endianness=='big':
 		u32 = '>u4'
 		u64 = '>u8'
+	elif endianness=='native':
+		u32 = 'u4'
+		u64 = 'u8'
 		
 	filename = "%s.0" % (filebase)
 	f = open(filename, mode='rb')
