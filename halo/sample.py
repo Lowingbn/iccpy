@@ -1,6 +1,7 @@
 import numpy.random
 import numpy as np
 
+
 def random_direction(n=1):
     phi = numpy.random.rand(n) * 2.0 * np.pi
 
@@ -45,27 +46,42 @@ def sample(halo, n, method='random'):
     v_scale = np.sqrt(1 + (r/halo.anisotropy_radius)**2)
     v_perpendicular_max = np.sqrt(2*psi)/v_scale
     prl = pos/r.reshape(len(r), 1)
+    prl = prl.swapaxes(0,1)
     vel = np.empty([n,3])
+
+    fQ_max = halo.distribution_function_Q(psi)        
+
+    idx = np.arange(n, dtype=np.int32)
+    rejections = 0
+
+    while idx.size > 0:
+        v_i = v_perpendicular_max[idx]*numpy.random.random(idx.size)**(1.0/3.0)*random_direction(idx.size).swapaxes(0,1)
         
-    for i in range(n):
-        fQ_max = halo.distribution_function_Q(psi[i])
-        while True:
-            v_i = v_perpendicular_max[i]*numpy.random.rand()**(1.0/3.0)*random_direction()[0]
-            v_parallel = np.dot(v_i, prl[i]) 
-            v_i = v_i + v_parallel * (v_scale[i] - 1) * prl[i]
+        v_parallel = (prl[:,idx] * v_i).sum(0) 
+        
+        v_i = v_i + v_parallel * (v_scale[idx] - 1) * prl[:,idx]
                 
-            L2 = np.square((pos[i,1]*v_i[2] - pos[i,2]*v_i[1], pos[i,2]*v_i[0] - pos[i,0]*v_i[2], pos[i,0]*v_i[1] - pos[i,1]*v_i[0])).sum()
-            v2 = np.square(v_i).sum()
-            Q = psi[i] - 0.5*v2
-            if halo.anisotropy_radius!=np.inf:
-                Q -= 0.5*L2/halo.anisotropy_radius**2 
-            
-            fQ = halo.distribution_function_Q(Q)
-    
-            if numpy.random.rand()*fQ_max <= fQ: break
+        L2 = np.square((pos[idx,1]*v_i[2] - pos[idx,2]*v_i[1], pos[idx,2]*v_i[0] - pos[idx,0]*v_i[2], pos[idx,0]*v_i[1] - pos[idx,1]*v_i[0])).sum(0)
+
+        v2 = np.square(v_i).sum(0)
+        Q = psi[idx] - 0.5*v2
+
+        if halo.anisotropy_radius!=np.inf:
+            Q -= 0.5*L2/halo.anisotropy_radius**2 
         
-        vel[i,:] = v_i
+        fQ = halo.distribution_function_Q(Q)
+        
+        reject = numpy.random.random(idx.size) * fQ_max[idx] > fQ
+        keep = np.flatnonzero(np.logical_not(reject))
+
+        vel[idx[keep]] = v_i[:,keep].swapaxes(0,1)        
+        idx = idx[np.flatnonzero(reject)]
+
+        rejections += idx.size
+        
             
+    print 'sampling done, total rejected', rejections
+
     return pos, vel
 
 if __name__=="__main__":
