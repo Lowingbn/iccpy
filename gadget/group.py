@@ -20,7 +20,7 @@ class SubfindGroup:
         self.v_max = 0
         self.ids = None
         
-def load_FoF_groups(directory, snapshot_num, loadIDs=False, endianness='little'):
+def load_FoF_groups(directory, snapshot_num, loadIDs=False, endianness='native'):
     if loadIDs:
         filebase = "%s/groups_%03d/group_ids_%03d" % (directory, snapshot_num, snapshot_num)
         ids = binary_group_io.read_IDs(filebase, endianness)
@@ -41,7 +41,7 @@ def load_FoF_groups(directory, snapshot_num, loadIDs=False, endianness='little')
         
     return groups
             
-def load_subfind_groups(directory, snapshot_num, loadIDs=False, endianness='little'):
+def load_subfind_groups(directory, snapshot_num, loadIDs=False, endianness='native'):
     if loadIDs:
         filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
         ids = binary_group_io.read_IDs(filebase, endianness)
