@@ -32,7 +32,7 @@ def load_snapshot_files(directory, file, snapshot_num):
     header = binary_snapshot_io.read_header(filename)
     num_files = header['num_files']
     
-    for i in range(len(num_files)):
+    for i in range(num_files[0]):
         filename = get_filename(directory, file, snapshot_num, i)
         header, res = binary_snapshot_io.read_snapshot_file(filename, False)
         yield header, res

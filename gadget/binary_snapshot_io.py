@@ -43,14 +43,14 @@ def read_snapshot_file(filename, physical=False, ics=False, cooling=False):
     id = readIDs(f, total)
     
     pmass = []
-    for mass, num in zip(masses, nparts):
-        if num > 0:
-            if mass == 0:
-                pmass.append(readu(f, precision, num))
-            else:
-                pmass.append(mass)
-        else:
-            pmass.append(0)
+#    for mass, num in zip(masses, nparts):
+#        if num > 0:
+#            if mass == 0:
+#                pmass.append(readu(f, precision, num))
+#            else:
+#                pmass.append(mass)
+#        else:
+#            pmass.append(0)
 
     ngas = nparts[0]
     
@@ -238,6 +238,8 @@ def readIDs(f, count=None):
     if data_size / 4 == count: dtype = uint32
     elif data_size / 8 == count: dtype = uint64
     else: raise Exception('Incorrect number of IDs requested')
+    
+    print "ID size: ", dtype
 
     ask_size = np.dtype(dtype).itemsize * count
     if ask_size > data_size:
@@ -249,7 +251,7 @@ def readIDs(f, count=None):
     # check the flag at the beginning corresponds to that at the end
     assert(data_size == final_block)
 
-    return arr    
+    return arr   
 
 def readu(f, dtype=None, count=None):
     """ Read a numpy array from the unformatted fortran file f """
