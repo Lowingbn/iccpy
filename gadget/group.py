@@ -1,4 +1,7 @@
 import binary_group_io
+import snapshot
+import itertools
+import numpy as np
 
 class FoFGroup:
     """Store information about each FoF group"""
@@ -98,3 +101,82 @@ def convert_to_subfind_groups(subgroups_props, snapshot_num):
         subgroups.append(subgroup)
     
     return subgroups
+
+def get_subgroup_idx(id, directory, snapshot_num, ids=None):
+    if ids is None:
+        filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
+        ids = binary_group_io.read_IDs(filebase)
+        
+        idx = np.flatnonzero(ids==id)[0]
+        del ids
+    else:
+        idx = np.flatnonzero(ids==id)[0]
+    
+    #Open file until we find the right one
+    subgroup_counter = 0
+    for i in itertools.count():
+        filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
+        props, groups, subgroups = binary_group_io.read_subfind_file(filename)
+        
+        for j in range(len(subgroups['npart'])):
+            if subgroups['offsets'][j]<=idx and subgroups['offsets'][j]+subgroups['npart'][j]>idx:
+                del groups
+                del subgroups
+                
+                return subgroup_counter + j
+        
+        subgroup_counter += props['num_subgroups']
+
+        del groups
+        del subgroups
+
+def get_subgroup_ids(subgroup_num, directory, snapshot_num, ids=None):
+    if ids is None:
+        filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
+        ids = binary_group_io.read_IDs(filebase)
+        
+    try:
+        iterator = iter(subgroup_num)
+        selectedIDs = set()
+        for subgroup_num in iterator:
+            selectedIDs.update(get_subgroup_ids(subgroup_num, directory, snapshot_num, ids))
+        return selectedIDs
+    except TypeError: 
+        #Open file until we find the right one
+        for i in itertools.count():
+            filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
+            props, groups, subgroups = binary_group_io.read_subfind_file(filename)
+        
+            if subgroup_num<props['num_subgroups']: break
+        
+            subgroup_num -= props['num_subgroups']
+            del groups
+            del subgroups
+    
+        offset = subgroups['offsets'][subgroup_num]
+        len = subgroups['npart'][subgroup_num]
+    
+        del groups
+        del subgroups
+    
+        return set(ids[offset:offset+len])
+    
+def get_particles(directory, filename, snapshot_num, select_ids):
+    ids, poses, vels = [], [], []
+    
+    for header, res in snapshot.load_snapshot_files(directory, filename, snapshot_num):
+        mass = res['mass'][1]
+        for id, pos, vel in itertools.izip(res['id'], res['pos'], res['vel']):
+            if id in select_ids:
+                ids.append(id)
+                poses.append(pos)
+                vels.append(vel)
+    
+        del res
+    
+    return np.array(ids), np.array(poses), np.array(vels), np.array([mass] * len(ids))
+
+def get_subgroup_particles(directory, filename, snapshot_num, subgroup_nums):
+    selectedIDs = get_subgroup_ids(subgroup_nums, directory, snapshot_num)
+    
+    return get_particles(directory, filename, snapshot_num, selectedIDs)
