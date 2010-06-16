@@ -43,14 +43,14 @@ def read_snapshot_file(filename, physical=False, ics=False, cooling=False):
     id = readIDs(f, total)
     
     pmass = []
-#    for mass, num in zip(masses, nparts):
-#        if num > 0:
-#            if mass == 0:
-#                pmass.append(readu(f, precision, num))
-#            else:
-#                pmass.append(mass)
-#        else:
-#            pmass.append(0)
+    for mass, num in zip(masses, nparts):
+        if num > 0:
+            if mass == 0:
+                pmass.append(readu(f, precision, num))
+            else:
+                pmass.append(mass)
+        else:
+            pmass.append(0)
 
     ngas = nparts[0]
     
