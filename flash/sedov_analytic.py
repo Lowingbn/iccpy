@@ -124,7 +124,8 @@ def test():
     print 'p shock', p_s
     print 'u shock', u_s
     print 'r shock', r_s
-  
+
+    print 'Dimensionless var (E/rho) t^2 r^-5', (5.0 /5.0)* 0.05**0.4 * r[-1]**-1.0
     vols = (4/3.0)*pi*r*r*r
     dv = vols.copy()
     dv[1:] = diff(dv)
