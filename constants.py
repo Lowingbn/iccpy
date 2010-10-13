@@ -4,26 +4,43 @@ UNIT_LENGTH = 1
 UNIT_MASS   = 1
 UNIT_TIME   = 1
 
-DEFAULT_GRAVITATIONAL_CONSTANT  = 6.673e-11      # m3 kg-1 s-2          
-DEFAULT_SPEED_OF_LIGHT          = 299792458      # m s-1
-DEFAULT_SOLAR_MASS              = 1.98892e30     # kg
-DEFAULT_PARSEC                  = 3.08568025e16  # m
-DEFAULT_YEAR                    = 31556926       # s
-
-DEFAULT_h = 0.73
+DEFAULT_GRAVITATIONAL_CONSTANT        = 6.673e-11               # m3 kg-1 s-2          
+DEFAULT_SPEED_OF_LIGHT                = 299792458               # m s-1
+DEFAULT_SOLAR_MASS                    = 1.98892e30              # kg
+DEFAULT_PARSEC                        = 3.0856775807e16         # m
+DEFAULT_YEAR                          = 31556926                # s
+DEFAULT_PROTON_MASS                   = 1.67262311e-27          # kg
+DEFAULT_BOLTZMANN_CONSTANT            = 1.3806503e-23           # m2 kg s-2 K-1
+DEFAULT_STEFAN_BOLTZMANN_CONSTANT     = 5.6705119e-8            # s-3 kg K-4
+DEFAULT_PLANCKS_CONSTANT              = 6.62607554e-24          # m2 kg s-1
 
 G = GRAVITATIONAL_CONSTANT = DEFAULT_GRAVITATIONAL_CONSTANT
 c = SPEED_OF_LIGHT = DEFAULT_SPEED_OF_LIGHT
-h = DEFAULT_h
+msun = SOLAR_MASS = DEFAULT_SOLAR_MASS
 
-def set_h(new_h):
-    global h
-    h = new_h
-    set_units(UNITS)
+pc = PARSEC = DEFAULT_PARSEC
+kpc = KILOPARSEC = 1e3 * DEFAULT_PARSEC
+Mpc = MEGAPARSEC = 1e6 * DEFAULT_PARSEC
+Gpc = GIGAPARSEC = 1e9 * DEFAULT_PARSEC
+
+yr = YEAR = DEFAULT_YEAR
+Myr = MEGAYEAR = 1e6 *  DEFAULT_YEAR
+Gyr = GIGAYEAR = 1e9 *  DEFAULT_YEAR
+
+m_p = PROTON_MASS = DEFAULT_PROTON_MASS
+k_b = BOLTZMANN_CONSTANT = DEFAULT_STEFAN_BOLTZMANN_CONSTANT
+ 
+sigma = STEFAN_BOLTZMANN_CONSTANT = DEFAULT_STEFAN_BOLTZMANN_CONSTANT 
+h_p = PLANCKS_CONSTANT = DEFAULT_PLANCKS_CONSTANT
 
 def set_units(units):
     global UNITS
     global c, SPEED_OF_LIGHT, G, GRAVITATIONAL_CONSTANT
+    global msun, SOLAR_MASS
+    global pc, kpc, Mpc, Gpc, KILOPARSEC, MEGAPARSEC, GIGAPARSEC
+    global yr, Myr, Gyr, YEAR, MEGAYEAR, GIGAYEAR
+    global m_p, PROTON_MASS, k_b, BOLTZMANN_CONSTANT, sigma, STEFAN_BOLTZMANN_CONSTANT
+    global h_p, PLANCKS_CONSTANT
     
     if units=="SI":
         UNIT_LENGTH = 1
@@ -31,17 +48,33 @@ def set_units(units):
         UNIT_TIME = 1
 
     elif units=="GALACTIC":
-        UNIT_LENGTH = (1e6 * DEFAULT_PARSEC / h)                # 1.0 Mpc h^-1
-        UNIT_MASS = (1e10 * DEFAULT_SOLAR_MASS / h)             # 10^10 M_solar h^-1
-        UNIT_TIME = (1e3 * DEFAULT_PARSEC / h)                  # 977.8 Gyr h^-1
+        UNIT_LENGTH = 1e6 * DEFAULT_PARSEC                # 1.0 Mpc
+        UNIT_MASS = 1e10 * DEFAULT_SOLAR_MASS             # 10^10 M_solar
+        UNIT_TIME = 1e3 * DEFAULT_PARSEC                  # 977.8 Gyr
     
-    elif units=="CGI":
+    elif units=="CGS":
         UNIT_LENGTH = 0.01
         UNIT_MASS = 0.001
         UNIT_TIME = 1
 
     UNITS = units
     G = GRAVITATIONAL_CONSTANT = DEFAULT_GRAVITATIONAL_CONSTANT * UNIT_MASS * UNIT_TIME**2 / UNIT_LENGTH**3
-    c = SPEED_OF_LIGHT = DEFAULT_SPEED_OF_LIGHT * UNIT_TIME / UNIT_LENGTH;
+    c = SPEED_OF_LIGHT = DEFAULT_SPEED_OF_LIGHT * UNIT_TIME / UNIT_LENGTH
+    
+    msun = SOLAR_MASS = DEFAULT_SOLAR_MASS / UNIT_MASS
+
+    pc = PARSEC = DEFAULT_PARSEC / UNIT_LENGTH
+    kpc = KILOPARSEC = 1e3 * PARSEC
+    Mpc = MEGAPARSEC = 1e6 * PARSEC
+    Gpc = GIGAPARSEC = 1e9 * PARSEC
+
+    yr = YEAR = DEFAULT_YEAR / UNIT_TIME
+    Myr = MEGAYEAR = 1e6 *  YEAR
+    Gyr = GIGAYEAR = 1e9 *  YEAR
+
+    m_p = PROTON_MASS = DEFAULT_PROTON_MASS / UNIT_MASS
+    k_b = BOLTZMANN_CONSTANT = DEFAULT_STEFAN_BOLTZMANN_CONSTANT * UNIT_TIME**2 / (UNIT_LENGTH**2 * UNIT_MASS)
+    sigma = STEFAN_BOLTZMANN_CONSTANT = DEFAULT_STEFAN_BOLTZMANN_CONSTANT * UNIT_TIME**3 / UNIT_MASS
+    h_p = PLANCKS_CONSTANT = DEFAULT_PLANCKS_CONSTANT * UNIT_TIME / (UNIT_LENGTH**2 * UNIT_MASS)
         
 set_units("SI")
