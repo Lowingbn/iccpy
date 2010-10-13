@@ -102,10 +102,10 @@ def convert_to_subfind_groups(subgroups_props, snapshot_num):
     
     return subgroups
 
-def get_subgroup_idx(id, directory, snapshot_num, ids=None):
+def get_subgroup_idx(id, directory, snapshot_num, ids=None, endianness='native'):
     if ids is None:
         filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
-        ids = binary_group_io.read_IDs(filebase)
+        ids = binary_group_io.read_IDs(filebase, endianness)
         
         idx = np.flatnonzero(ids==id)[0]
         del ids
@@ -116,7 +116,7 @@ def get_subgroup_idx(id, directory, snapshot_num, ids=None):
     subgroup_counter = 0
     for i in itertools.count():
         filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
-        props, groups, subgroups = binary_group_io.read_subfind_file(filename)
+        props, groups, subgroups = binary_group_io.read_subfind_file(filename, endianness)
         
         for j in range(len(subgroups['npart'])):
             if subgroups['offsets'][j]<=idx and subgroups['offsets'][j]+subgroups['npart'][j]>idx:
@@ -130,10 +130,10 @@ def get_subgroup_idx(id, directory, snapshot_num, ids=None):
         del groups
         del subgroups
 
-def get_subgroup_ids(subgroup_num, directory, snapshot_num, ids=None):
+def get_subgroup_ids(subgroup_num, directory, snapshot_num, ids=None, endianness='native'):
     if ids is None:
         filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
-        ids = binary_group_io.read_IDs(filebase)
+        ids = binary_group_io.read_IDs(filebase, endianness)
         
     try:
         iterator = iter(subgroup_num)
@@ -145,7 +145,7 @@ def get_subgroup_ids(subgroup_num, directory, snapshot_num, ids=None):
         #Open file until we find the right one
         for i in itertools.count():
             filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
-            props, groups, subgroups = binary_group_io.read_subfind_file(filename)
+            props, groups, subgroups = binary_group_io.read_subfind_file(filename, endianness)
         
             if subgroup_num<props['num_subgroups']: break
         
