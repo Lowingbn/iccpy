@@ -29,7 +29,7 @@ def load_snapshot_file(directory, filename, snapshot_num, file_num=0):
 def load_snapshot_files(directory, file, snapshot_num):
     filename = get_filename(directory, file, snapshot_num)
     
-    header = binary_snapshot_io.read_header(filename)
+    header = binary_snapshot_io.read_snapshot_header(filename)
     num_files = header['num_files']
     
     for i in range(num_files[0]):
