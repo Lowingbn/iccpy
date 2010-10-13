@@ -1,20 +1,31 @@
 import numpy as np
 
-def density_profile(pos, particle_mass=1, n_bins=20):
-    r_pts = np.sqrt(np.square(pos).sum(1))
-    r_bins = r_pts.min() * np.power(r_pts.max()/r_pts.min(), np.arange(n_bins)/(n_bins-1.0))
+def density_profile(pos, particle_mass=1, n_bins=20, centre=None):
+    if centre is None:
+        r_pts = np.sqrt(np.square(pos).sum(1))
+    else:
+        r_pts = np.sqrt(np.square(pos-centre).sum(1))
+   
+    r_min = np.sort(r_pts)[1]
+    r_bins = r_min * np.power(r_pts.max()/r_min, np.arange(n_bins)/(n_bins-1.0))
 
     bin_mass, r_bins = np.histogram(r_pts, r_bins)
     bin_vol = r_to_dV(r_bins)[1:]
     bin_dens = (bin_mass * particle_mass) / bin_vol
     
-    return bin_dens, r_bins[1:] - np.diff(r_bins)/2
+    return bin_dens, r_bins[1:] - np.diff(r_bins)/2, r_bins
     
-def anisotropy_profile(pos, vel, n_bins=20):
-    r_pts = np.sqrt(np.square(pos).sum(1))
-    r_bins = r_pts.min() * np.power(r_pts.max()/r_pts.min(), np.arange(n_bins)/(n_bins-1.0))
+def anisotropy_profile(pos, vel, n_bins=20, centre=None):
+    if centre is None:
+        rpos = pos    
+    else:
+        rpos = pos - centre
     
-    dir = pos/r_pts.reshape(r_pts.shape[0], 1)
+    r_pts = np.sqrt(np.square(rpos).sum(1))
+    r_min = np.sort(r_pts)[1]
+    r_bins = r_min * np.power(r_pts.max()/r_min, np.arange(n_bins)/(n_bins-1.0))
+    
+    dir = rpos/r_pts.reshape(r_pts.shape[0], 1)
     
     v_r = (dir*vel).sum(1)
     v2 = np.square(vel).sum(1)
@@ -28,6 +39,7 @@ def anisotropy_profile(pos, vel, n_bins=20):
          
     #mean_v_r = bin_v_r/bin_nums
     sigma_v_r = bin_v_r2/bin_nums #- mean_v_r**2
+    
     #mean_v_p = bin_v_p/bin_nums
     sigma_v_p = bin_v_p2/bin_nums #- mean_v_p**2
     

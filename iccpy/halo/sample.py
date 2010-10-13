@@ -1,7 +1,6 @@
 import numpy.random
 import numpy as np
 
-
 def random_direction(n=1):
     phi = numpy.random.rand(n) * 2.0 * np.pi
 
@@ -38,8 +37,11 @@ def sample_density(halo, n, method='random'):
         return None
     
 def sample(halo, n, method='random'):
+    print "Sampling halo"
     pos, r = sample_density(halo, n, method)
     n = pos.shape[0]
+    
+    print "Density sampling complete, %d points picked" % n
     
     psi = -halo.potential(r)
         
@@ -49,7 +51,7 @@ def sample(halo, n, method='random'):
     prl = prl.swapaxes(0,1)
     vel = np.empty([n,3])
 
-    fQ_max = halo.distribution_function_Q(psi)        
+    fQ_max = halo.distribution_function_Q_max(psi)        
 
     idx = np.arange(n, dtype=np.int32)
     rejections = 0
@@ -80,7 +82,7 @@ def sample(halo, n, method='random'):
         rejections += idx.size
         
             
-    print 'sampling done, total rejected', rejections
+    print 'Velocity sampling done, total rejected', rejections
 
     return pos, vel
 
@@ -96,7 +98,7 @@ if __name__=="__main__":
     hernquist = iccpy.halo.hernquist.Hernquist(100, 0.03, 0.04)
     
     #Sample the profile
-    pos, vel = sample(hernquist, 10000, method='random')
+    pos, vel = sample(hernquist, 1000000, method='random')
     particle_mass=hernquist.total_mass/float(pos.shape[0])
     
     #Work out density profile of samples
