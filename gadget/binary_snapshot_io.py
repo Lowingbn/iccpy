@@ -43,10 +43,19 @@ def read_snapshot_file(filename, physical=False, ics=False, cooling=False):
     id = readIDs(f, total)
     
     pmass = []
+    #Any particle types which do not have their mass specified in the header will be 
+    #found in a mass block
+    mass_len = sum([ num for mass, num in zip(masses, nparts) if num>0 and mass==0 ])
+    
+    if mass_len>0:
+        mass_block = pmass.append(readu(f, precision, mass_len))
+    
+    offset = 0
     for mass, num in zip(masses, nparts):
         if num > 0:
             if mass == 0:
-                pmass.append(readu(f, precision, num))
+                pmass.append(mass_block[offset:offset+num])
+                offset += num
             else:
                 pmass.append(mass)
         else:
@@ -133,8 +142,11 @@ def write_snapshot_file(filename, header, data, physical=True, cooling=False, ic
             if len(pmass) != num:
                 raise Exception('bad mass values')
 
-    init = [('pos', float32, total * 3), ('vel', float32, total * 3), \
-                     ('id', uint32, total)]
+    if header['flag_doubleprecision']==0:
+        init = [('pos', float32, total * 3), ('vel', float32, total * 3), ('id', uint32, total)]
+    else:
+        init = [('pos', float64, total * 3), ('vel', float64, total * 3), ('id', uint64, total)]
+        
     a = []
     if ngas > 0:
         a.append(('therm', float32, ngas))
