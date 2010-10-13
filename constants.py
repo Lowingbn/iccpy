@@ -14,6 +14,12 @@ DEFAULT_h = 0.73
 
 G = GRAVITATIONAL_CONSTANT = DEFAULT_GRAVITATIONAL_CONSTANT
 c = SPEED_OF_LIGHT = DEFAULT_SPEED_OF_LIGHT
+h = DEFAULT_h
+
+def set_h(new_h):
+    global h
+    h = new_h
+    set_units(UNITS)
 
 def set_units(units):
     global UNITS
@@ -25,9 +31,9 @@ def set_units(units):
         UNIT_TIME = 1
 
     elif units=="GALACTIC":
-        UNIT_LENGTH = (1e6 * DEFAULT_PARSEC / DEFAULT_h)                # 1.0 Mpc h^-1
-        UNIT_MASS = (1e10 * DEFAULT_SOLAR_MASS / DEFAULT_h)             # 10^10 M_solar h^-1
-        UNIT_TIME = (1e3 * DEFAULT_PARSEC / DEFAULT_h)                  # 977.8 Gyr h^-1
+        UNIT_LENGTH = (1e6 * DEFAULT_PARSEC / h)                # 1.0 Mpc h^-1
+        UNIT_MASS = (1e10 * DEFAULT_SOLAR_MASS / h)             # 10^10 M_solar h^-1
+        UNIT_TIME = (1e3 * DEFAULT_PARSEC / h)                  # 977.8 Gyr h^-1
     
     elif units=="CGI":
         UNIT_LENGTH = 0.01
