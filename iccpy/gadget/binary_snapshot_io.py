@@ -43,7 +43,7 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False):
     mass_len = sum([ num for mass, num in zip(masses, nparts) if num>0 and mass==0 ])
     
     if mass_len>0:
-        mass_block = pmass.append(readu(f, precision, mass_len))
+        mass_block = readu(f, precision, mass_len)
     
     offset = 0
     for mass, num in zip(masses, nparts):
