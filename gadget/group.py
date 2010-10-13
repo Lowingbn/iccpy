@@ -83,6 +83,7 @@ def convert_to_fof_groups(groups_props, snapshot_num):
     return groups
 
 def convert_to_subfind_groups(subgroups_props, snapshot_num):
+    """Convert a dictionary of subfind froup properties into a list of subfind group objects"""
     subgroups = []
     
     for i in range(len(subgroups_props['npart'])):

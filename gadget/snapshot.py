@@ -1,7 +1,7 @@
 import binary_snapshot_io
 import os.path
 
-def get_filename(directory, file, snapnum=0, filenum=0):
+def _get_filename(directory, file, snapnum=0, filenum=0):
     if filenum==0 and snapnum==0:
         filename = directory + "/" + file
         if os.path.isfile(filename): return filename 
@@ -23,16 +23,17 @@ def get_filename(directory, file, snapnum=0, filenum=0):
     raise IOError
 
 def load_snapshot_file(directory, filename, snapshot_num, file_num=0):
-    filename = get_filename(directory, filename, snapshot_num, file_num)
+    """ load a single Gadget snapshot file """
+    filename = _get_filename(directory, filename, snapshot_num, file_num)
     return binary_snapshot_io.read_snapshot_file(filename)
 
 def load_snapshot_files(directory, file, snapshot_num):
-    filename = get_filename(directory, file, snapshot_num)
+    filename = _get_filename(directory, file, snapshot_num)
     
     header = binary_snapshot_io.read_snapshot_header(filename)
     num_files = header['num_files']
     
     for i in range(num_files[0]):
-        filename = get_filename(directory, file, snapshot_num, i)
+        filename = _get_filename(directory, file, snapshot_num, i)
         header, res = binary_snapshot_io.read_snapshot_file(filename, False)
         yield header, res
