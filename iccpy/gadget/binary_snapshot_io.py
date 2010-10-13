@@ -100,10 +100,9 @@ def write_snapshot_file(filename, header, pos, vel, ids, masses=None, extra_data
 
     # do some checks on the data
     nparts = header['npart']
-    total = np.array(nparts).sum()
     
     mass_len = sum([ num for num, mass in zip(nparts, header['mass']) if mass==0 ])
-    if mass_len!=len(masses):
+    if mass_len!=0 and mass_len!=len(masses):
         raise Exception('bad mass values')
 
     #should we write in single or double precision
