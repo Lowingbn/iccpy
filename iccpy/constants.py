@@ -35,6 +35,7 @@ h_p = PLANCKS_CONSTANT = DEFAULT_PLANCKS_CONSTANT
 
 def set_units(units):
     global UNITS
+    global UNIT_LENGTH, UNIT_MASS, UNIT_TIME
     global c, SPEED_OF_LIGHT, G, GRAVITATIONAL_CONSTANT
     global msun, SOLAR_MASS
     global pc, kpc, Mpc, Gpc, KILOPARSEC, MEGAPARSEC, GIGAPARSEC
