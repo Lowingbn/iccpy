@@ -1,5 +1,5 @@
 from tables import openFile
-from numpy import mgrid, add, multiply, ones, flatnonzero, empty, float64
+from numpy import mgrid, add, multiply, ones, flatnonzero, empty, float64, repeat
 
 def read_flash_names(filename, names):
     """ read arrays of the given names in a flash file """
@@ -71,7 +71,7 @@ def get_data(filename, vars=('dens', 'pres', 'lamb', 'temp', 'eint')):
     for var in vars:
         result[var] = data[var][leaf_blocks].flatten()
 
-    result['cell size'] = data['block size'][leaf_blocks, 0] / 8.0
+    result['cell size'] = repeat(data['block size'][leaf_blocks, 0] / 8.0, 8**dim)
 
     pos = empty((leaf_blocks.size*(8**dim), dim), dtype=float64)
 
