@@ -1,6 +1,6 @@
 from numpy import uint64, clip, searchsorted, bincount, maximum, minimum, diff, float64, zeros, equal, where, zeros_like
 
-def cloud_in_cell(x,y, pts_x, pts_y, pts_vals=None, min_val=False):
+def cloud_in_cell(x,y, pts_x, pts_y, pts_vals=None, min_val=False, mean_val=True):
     """
     creates a grid of cells with borders x[:] and y[:]
     counts the fraction of particles in each cell, using cloud-in-cell approximation
@@ -12,6 +12,8 @@ def cloud_in_cell(x,y, pts_x, pts_y, pts_vals=None, min_val=False):
     pts_vals - values for each point (default=None). If set then the grid contains the average value for the cells
 
     min_val=False - if True then set the minimum number in each cell as 1, (good for log plots)
+    
+    mean_val=True - if True then use the mean value for the cell (otherwise use the sum)
 
     """
     density = zeros((x.size*y.size), dtype=float64)
@@ -62,7 +64,11 @@ def cloud_in_cell(x,y, pts_x, pts_y, pts_vals=None, min_val=False):
         res = maximum(res, 1.0)
 
     if pts_vals is not None:
-        res = values / res
+        if mean_val:
+            res = values / res
+        else:
+            res = values
+
         if min_val:
             res = maximum(res, pts_vals.min())
     else:
