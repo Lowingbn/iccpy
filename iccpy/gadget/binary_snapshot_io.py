@@ -9,7 +9,7 @@ header_sizes = ((uint32, 6), (float64, 6), (float64, 1), (float64, 1), (uint32, 
              (uint32, 6), (uint32, 1), (uint32, 1), (float64, 1), (float64, 1), (float64, 1), \
              (float64, 1), (uint32, 1), (uint32, 1), (uint32, 6), (uint32, 1), (uint32, 1), (np.uint8, 56))
 
-def read_snapshot_file(filename, gas=False, ics=False, cooling=False):
+def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=False):
     """ Reads a binary gadget file """
     f = open(filename, mode='rb')
 
@@ -29,8 +29,10 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False):
     
     if header['flag_doubleprecision']:
         precision = float64
+        print 'Precision: Double'
     else:
         precision = float32
+        print 'Precision: Float'
 
     pos = readu(f, precision, total * 3).reshape((total, 3))
     vel = readu(f, precision, total * 3).reshape((total, 3))
@@ -73,6 +75,9 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False):
             res['sml'] = readu(f, float32, ngas)
         else:
             res['sml'] = 0.0
+            
+    if accel:
+        res['accel'] = readu(f, precision, total * 3).reshape((total, 3))
 
     f.close()
 
@@ -130,8 +135,9 @@ def write_snapshot_file(filename, header, pos, vel, ids, masses=None, extra_data
     if mass_len>0:
         writeu(f, masses.astype(precision))
         
-    for data in extra_data:
-        writeu(f, data.astype(precision))
+    if extra_data is not None:
+      for data in extra_data:
+          writeu(f, data.astype(precision))
  
     # all done!
     f.close()
