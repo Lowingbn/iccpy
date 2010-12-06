@@ -112,7 +112,7 @@ def write_snapshot_file(filename, header, pos, vel, ids, masses=None, extra_data
 
     #should we write in single or double precision
     if header['flag_doubleprecision']==0:
-        precision = float64
+        precision = float32
     else:
         precision = float64
 
