@@ -9,6 +9,10 @@ header_sizes = ((uint32, 6), (float64, 6), (float64, 1), (float64, 1), (uint32, 
              (uint32, 6), (uint32, 1), (uint32, 1), (float64, 1), (float64, 1), (float64, 1), \
              (float64, 1), (uint32, 1), (uint32, 1), (uint32, 6), (uint32, 1), (uint32, 1), (np.uint8, 56))
 
+header_sizes_swap = (('>u4', 6), ('>f8', 6), ('>f8', 1), ('>f8', 1), ('>u4', 1), ('>u4', 1), \
+             ('>u4', 6), ('>u4', 1), ('>u4', 1), ('>f8', 1), ('>f8', 1), ('>f8', 1), \
+             ('>f8', 1), ('>u4', 1), ('>u4', 1), ('>u4', 6), ('>u4', 1), ('>u4', 1), (np.uint8, 56))
+
 def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=False):
     """ Reads a binary gadget file """
     f = open(filename, mode='rb')
@@ -34,10 +38,10 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
         precision = float32
         print 'Precision: Float'
 
-    pos = readu(f, precision, total * 3).reshape((total, 3))
-    vel = readu(f, precision, total * 3).reshape((total, 3))
+    pos = readu(f, precision, total * 3, header['swap_endian']).reshape((total, 3))
+    vel = readu(f, precision, total * 3, header['swap_endian']).reshape((total, 3))
 
-    id = readIDs(f, total)
+    id = readIDs(f, total, header['swap_endian'])
     
     pmass = []
     #Any particle types which do not have their mass specified in the header will be 
@@ -45,7 +49,7 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
     mass_len = sum([ num for mass, num in zip(masses, nparts) if num>0 and mass==0 ])
     
     if mass_len>0:
-        mass_block = readu(f, precision, mass_len)
+        mass_block = readu(f, precision, mass_len, header['swap_endian'])
     
     offset = 0
     for mass, num in zip(masses, nparts):
@@ -60,24 +64,24 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
     
     if gas:
         ngas = nparts[0]
-        res['therm'] = readu(f, float32, ngas)
+        res['therm'] = readu(f, float32, ngas, header['swap_endian'])
         if not ics:
-            res['rho'] = readu(f, float32, ngas)
+            res['rho'] = readu(f, float32, ngas, header['swap_endian'])
             if cooling:
-                res['Ne'] = readu(f, float32, ngas)
+                res['Ne'] = readu(f, float32, ngas, header['swap_endian'])
 
         if cooling:
-            res['NHI'] = readu(f, float32, ngas)
-            res['NHeI'] = readu(f, float32, ngas)
-            res['NHeIII'] = readu(f, float32, ngas)
+            res['NHI'] = readu(f, float32, ngas, header['swap_endian'])
+            res['NHeI'] = readu(f, float32, ngas, header['swap_endian'])
+            res['NHeIII'] = readu(f, float32, ngas, header['swap_endian'])
                 
         if not ics:
-            res['sml'] = readu(f, float32, ngas)
+            res['sml'] = readu(f, float32, ngas, header['swap_endian'])
         else:
             res['sml'] = 0.0
             
     if accel:
-        res['accel'] = readu(f, precision, total * 3).reshape((total, 3))
+        res['accel'] = readu(f, precision, total * 3, header['swap_endian']).reshape((total, 3))
 
     f.close()
 
@@ -152,17 +156,24 @@ def read_snapshot_header(filename):
 
 def read_header(f):
     """ Read the binary GADGET header file into a dictionary """
-    assert(np.fromfile(f, uint32, 1)[0] == 256) # 256 byte header
+    block_size = np.fromfile(f, uint32, 1)[0] 
+    if  block_size == 256: # 256 byte header
+        header = dict(((name, np.fromfile(f, dtype=size[0], count=size[1])) \
+                       for name, size in zip(header_names, header_sizes)))
+        header['swap_endian'] = False
 
-    header = dict(((name, np.fromfile(f, dtype=size[0], count=size[1])) \
-                                         for name, size in zip(header_names, header_sizes)))
+        assert(np.fromfile(f, uint32, 1)[0] == 256)
+    else:
+        header = dict(((name, np.fromfile(f, dtype=size[0], count=size[1])) \
+                       for name, size in zip(header_names, header_sizes_swap)))
+        header['swap_endian'] = True
 
-    assert(np.fromfile(f, uint32, 1)[0] == 256)
+        assert(np.fromfile(f, '>u4', 1)[0] == 256)
     return header
     
-def readIDs(f, count=None):
+def readIDs(f, count=None, swap_endian=False):
     """ Read a the ID block from a binary GADGET snapshot file """
-    data_size = np.fromfile(f, uint32, 1)[0]
+    data_size = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
     
     count = int(count)        
     if data_size / 4 == count: dtype = uint32
@@ -175,17 +186,17 @@ def readIDs(f, count=None):
     if ask_size > data_size:
         raise Exception('Data requested larger than buffer')
 
-    arr = np.fromfile(f, dtype, count)
-    final_block = np.fromfile(f, uint32, 1)[0]
+    arr = np.fromfile(f, rtype(dtype, swap_endian), count)
+    final_block = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
 
     # check the flag at the beginning corresponds to that at the end
     assert(data_size == final_block)
 
     return arr   
 
-def readu(f, dtype=None, count=None):
+def readu(f, dtype=None, count=None, swap_endian=False):
     """ Read a numpy array from the unformatted fortran file f """  
-    data_size = np.fromfile(f, uint32, 1)[0]
+    data_size = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
     read_size = data_size
 
     if dtype is not None:
@@ -194,13 +205,13 @@ def readu(f, dtype=None, count=None):
         if ask_size > read_size:
             raise Exception('Data requested larger than buffer')
 
-        arr = np.fromfile(f, dtype, count)
+        arr = np.fromfile(f, rtype(dtype, swap_endian), count)
         read_size = read_size - ask_size
     else:
         arr = None
 
     f.seek(read_size, 1)
-    final_block = np.fromfile(f, uint32, 1)[0]
+    final_block = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
 
     # check the flag at the beginning corresponds to that at the end
     assert(data_size == final_block)
@@ -222,3 +233,9 @@ def writeu(f, arr=None):
         arr.tofile(f)
 
     data_size.tofile(f)
+
+def rtype(t, swap_endian):
+    if not swap_endian: return t
+    else:
+        dt = np.dtype(t)
+        return dt.newbyteorder('>')
