@@ -261,4 +261,4 @@ def sample_hernquist(num_particles, mass, scale_length, anisotropy_radius=np.inf
     
     #Create a hernquist profile
     hernquist = iccpy.halo.hernquist.Hernquist(mass, scale_length, anisotropy_radius)
-    return sample(hernquist, num_particles)
+    return sample(hernquist, num_particles), hernquist.total_mass/num_particles
