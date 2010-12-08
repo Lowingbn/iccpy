@@ -37,6 +37,9 @@ class Hernquist:
     
         return ans
     
+    def distribution_function_Q_max(self, Q):
+        return self.distribution_function_Q(Q)
+    
     def distribution_function(self, pos, vel):
         r = np.square(pos).sum()
         psi = -self.potential(r)
