@@ -7,7 +7,12 @@ def read_flash_names(filename, names):
 
     res = {}
 
-    params = f.getNode(f.root, 'simulation parameters')
+    # need to check if flash 3
+    name = 'simulation parameters'
+    if name not in f.root:
+        name = 'real scalars'
+
+    params = f.getNode(f.root, name)
     res['time'] = params[0][1]
 
     for name in names:
