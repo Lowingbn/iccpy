@@ -38,7 +38,7 @@ def set_units(units):
     global UNIT_LENGTH, UNIT_MASS, UNIT_TIME
     global c, SPEED_OF_LIGHT, G, GRAVITATIONAL_CONSTANT
     global msun, SOLAR_MASS
-    global pc, kpc, Mpc, Gpc, KILOPARSEC, MEGAPARSEC, GIGAPARSEC
+    global pc, kpc, Mpc, Gpc, PARSEC, KILOPARSEC, MEGAPARSEC, GIGAPARSEC
     global yr, Myr, Gyr, YEAR, MEGAYEAR, GIGAYEAR
     global m_p, PROTON_MASS, k_b, BOLTZMANN_CONSTANT, sigma, STEFAN_BOLTZMANN_CONSTANT
     global h_p, PLANCKS_CONSTANT
@@ -57,6 +57,10 @@ def set_units(units):
         UNIT_LENGTH = 0.01
         UNIT_MASS = 0.001
         UNIT_TIME = 1
+        
+    else:
+        print "Error: Unknown unit system"
+        return
 
     UNITS = units
     G = GRAVITATIONAL_CONSTANT = DEFAULT_GRAVITATIONAL_CONSTANT * UNIT_MASS * UNIT_TIME**2 / UNIT_LENGTH**3
