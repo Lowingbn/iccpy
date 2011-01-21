@@ -1,5 +1,6 @@
 import numpy as np
 import iccpy.constants
+import scipy.integrate
 
 OMEGA_L0 = OmegaLambda0            = 0.742
 OMEGA_M0 = OmegaMatter0            = 0.238
@@ -7,6 +8,8 @@ OMEGA_B0 = OmegaBaryon0            = 0.0418
 OMEGA_K0                           = 0
 OMEGA_R0                           = 0
 h                                  = 0.73
+
+_times = {}
 
 def _hubble_func(a):
     return np.sqrt(OMEGA_K0/(a*a) + OMEGA_M0/(a**3) + OMEGA_R0/(a**4) + OMEGA_L0);
@@ -16,7 +19,13 @@ def hubble_0(h=h):
     
 def hubble_param(a, h=h):
     return hubble_0(h) * _hubble_func(a)
+
+def time(a):
+    if a not in _times: 
+        _times[a] = scipy.integrate.quad(lambda a: 1.0/(a*_hubble_func(a)), 0, a, ())[0]/hubble_0()
     
+    return _times[a]
+
 def omega_m(a):
     h = _hubble_func(a)
     return OMEGA_M0/(a**3 * h**2)
