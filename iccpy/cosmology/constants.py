@@ -14,11 +14,11 @@ _times = {}
 def _hubble_func(a):
     return np.sqrt(OMEGA_K0/(a*a) + OMEGA_M0/(a**3) + OMEGA_R0/(a**4) + OMEGA_L0);
 
-def hubble_0():
+def hubble_0(h=0.73):
     return 3.2407764868e-18 * iccpy.constants.UNIT_TIME
     
-def hubble_param(a):
-    return hubble_0() * _hubble_func(a)
+def hubble_param(a, h=0.73):
+    return hubble_0(h) * _hubble_func(a)
 
 def time(a):
     if a not in _times: 
