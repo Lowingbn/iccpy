@@ -8,6 +8,7 @@ class FoFGroup:
     def __init__(self, snapshot_num):
         self.snapshot_num = snapshot_num
         self.npart = 0
+        self.pot_min = None
         self.ids = None
     
 
@@ -74,6 +75,7 @@ def convert_to_fof_groups(groups_props, snapshot_num):
     for i in range(len(groups_props['npart'])):
         group = FoFGroup(snapshot_num)
         group.npart = groups_props['npart'][i]
+        group.pot_min = groups_props['pot_min'][i]
         
         if 'ids' in groups_props:
             group.ids = groups_props['ids'][i]
