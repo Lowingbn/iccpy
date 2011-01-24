@@ -2,8 +2,8 @@ import numpy as np
 import iccpy.constants
 import scipy.integrate
 
-OMEGA_L0 = OmegaLambda0            = 0.742
-OMEGA_M0 = OmegaMatter0            = 0.238
+OMEGA_L0 = OmegaLambda0            = 0.75#0.742
+OMEGA_M0 = OmegaMatter0            = 0.25#0.238
 OMEGA_B0 = OmegaBaryon0            = 0.0418
 OMEGA_K0                           = 0
 OMEGA_R0                           = 0
