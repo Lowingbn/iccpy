@@ -188,6 +188,8 @@ def readIDs(f, count=None, swap_endian=False):
 
     arr = np.fromfile(f, rtype(dtype, swap_endian), count)
     final_block = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
+    
+    print final_block
 
     # check the flag at the beginning corresponds to that at the end
     assert(data_size == final_block)
@@ -235,7 +237,8 @@ def writeu(f, arr=None):
     data_size.tofile(f)
 
 def rtype(t, swap_endian):
-    if not swap_endian: return t
+    if not swap_endian: 
+        return t
     else:
         dt = np.dtype(t)
         return dt.newbyteorder('>')

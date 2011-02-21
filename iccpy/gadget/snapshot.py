@@ -24,15 +24,24 @@ def _get_filename(directory, file, snapnum=0, filenum=0):
     print "Unable to find Gadget snapshot file %s %s %d %d.\n" % (directory, file, snapnum, filenum)
     raise IOError
   
+def load_header(directory, filename, snapshot_num, file_num=0):
+    return load_snapshot_header(directory, filename, snapshot_num, file_num)
+    
 def load_snapshot_header(directory, filename, snapshot_num, file_num=0):
     """ load a single Gadget snapshot file header """
     filename = _get_filename(directory, filename, snapshot_num, file_num)
     return binary_snapshot_io.read_snapshot_header(filename)
 
+def load_file(directory, filename, snapshot_num, file_num=0):
+    return load_snapshot_file(directory, filename, snapshot_num, file_num)
+
 def load_snapshot_file(directory, filename, snapshot_num, file_num=0):
     """ load a single Gadget snapshot file """
     filename = _get_filename(directory, filename, snapshot_num, file_num)
     return binary_snapshot_io.read_snapshot_file(filename)
+
+def load(directory, file, snapshot_num):
+    yield load_snapshot_files(directory, file, snapshot_num)
 
 def load_snapshot_files(directory, file, snapshot_num):
     filename = _get_filename(directory, file, snapshot_num)
