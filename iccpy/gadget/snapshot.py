@@ -41,7 +41,7 @@ def load_snapshot_file(directory, filename, snapshot_num, file_num=0):
     return binary_snapshot_io.read_snapshot_file(filename)
 
 def load(directory, file, snapshot_num):
-    yield load_snapshot_files(directory, file, snapshot_num)
+    return load_snapshot_files(directory, file, snapshot_num)
 
 def load_snapshot_files(directory, file, snapshot_num):
     filename = _get_filename(directory, file, snapshot_num)
