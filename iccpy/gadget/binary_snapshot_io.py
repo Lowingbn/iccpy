@@ -13,7 +13,7 @@ header_sizes_swap = (('>u4', 6), ('>f8', 6), ('>f8', 1), ('>f8', 1), ('>u4', 1),
              ('>u4', 6), ('>u4', 1), ('>u4', 1), ('>f8', 1), ('>f8', 1), ('>f8', 1), \
              ('>f8', 1), ('>u4', 1), ('>u4', 1), ('>u4', 6), ('>u4', 1), ('>u4', 1), (np.uint8, 56))
 
-def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=False):
+def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=False, pot=False):
     """ Reads a binary gadget file """
     f = open(filename, mode='rb')
 
@@ -80,9 +80,12 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
         else:
             res['sml'] = 0.0
             
-    if accel:
-        res['accel'] = readu(f, precision, total * 3, header['swap_endian']).reshape((total, 3))
+    if pot:
+        res['pot'] = readu(f, precision, total, header['swap_endian'])
 
+    if accel:
+        res['accel'] = readu(f, precision, total * 3, header['swap_endian']).reshape((total, 3))    
+    
     f.close()
 
     res['pos'] = pos
