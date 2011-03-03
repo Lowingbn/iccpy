@@ -16,6 +16,7 @@ header_sizes_swap = (('>u4', 6), ('>f8', 6), ('>f8', 1), ('>f8', 1), ('>u4', 1),
 def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=False, pot=False):
     """ Reads a binary gadget file """
     f = open(filename, mode='rb')
+    print "Loading file %s" % filename
 
     res = {} # dictionary to hold data
 
@@ -191,8 +192,6 @@ def readIDs(f, count=None, swap_endian=False):
 
     arr = np.fromfile(f, rtype(dtype, swap_endian), count)
     final_block = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
-    
-    print final_block
 
     # check the flag at the beginning corresponds to that at the end
     assert(data_size == final_block)
