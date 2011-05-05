@@ -49,9 +49,9 @@ def set_units(units):
         UNIT_TIME = 1
 
     elif units=="GALACTIC_H":
-        UNIT_LENGTH = 1e6 * DEFAULT_PARSEC / 0.73                # 1.0 Mpc
-        UNIT_MASS = 1e10 * DEFAULT_SOLAR_MASS / 0.73             # 10^10 M_solar
-        UNIT_TIME = 1e3 * DEFAULT_PARSEC / 0.73                  # 977.8 Gyr
+        UNIT_LENGTH = 1e6 * DEFAULT_PARSEC / 0.73                # 1.0 h^-1 Mpc
+        UNIT_MASS = 1e10 * DEFAULT_SOLAR_MASS / 0.73             # 10^10 h^-1 M_solar
+        UNIT_TIME = 1e3 * DEFAULT_PARSEC / 0.73                  # 977.8 h^-1 Gyr
         
     elif units=="GALACTIC":
         UNIT_LENGTH = 1e6 * DEFAULT_PARSEC                # 1.0 Mpc

@@ -45,6 +45,13 @@ def load(directory, file, snapshot_num):
     return load_snapshot_files(directory, file, snapshot_num)
 
 def load_snapshot_files(directory, file, snapshot_num):
+    """Loads a complete binary GADGET snapshot
+    
+    Arguments:
+    directory -- the location of the snapshot
+    file -- the file name
+    snapshot_num -- the number of the snapshot 
+    """
     filename = _get_filename(directory, file, snapshot_num)
     
     header = binary_snapshot_io.read_snapshot_header(filename)
