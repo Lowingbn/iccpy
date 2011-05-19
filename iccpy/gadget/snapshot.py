@@ -2,7 +2,7 @@
 import binary_snapshot_io
 import os.path
 import numpy as np
-import iccpy.cosmology.constants
+import iccpy.cosmology
 
 def _get_filename(directory, file, snapnum=0, filenum=0):
     if filenum==0 and snapnum==0:
@@ -68,7 +68,7 @@ def convert_to_physical(header, res):
     z = header['redshift']
     
     res['pos'] *= (1+z) / h
-    res['vel'] = res['vel'] * np.sqrt(1+z) + iccpy.cosmology.constants.hubble_param(1/(1+z), h) * res['pos']
+    res['vel'] = res['vel'] * np.sqrt(1+z) + iccpy.cosmology.hubble_param(1/(1+z), h) * res['pos']
     res['mass'] /= h
     
     if 'sml' in res: res['sml'] *= (1+z) / h
