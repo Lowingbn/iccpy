@@ -27,7 +27,7 @@ class SubfindGroup:
 def load_FoF_groups(directory, snapshot_num, loadIDs=False, endianness='native'):
     if loadIDs:
         filebase = "%s/groups_%03d/group_ids_%03d" % (directory, snapshot_num, snapshot_num)
-        ids = binary_group_io.read_IDs(filebase, endianness)
+        ids = binary_group_io.read_IDs(filebase)
     else:
         ids = None
         
@@ -45,23 +45,23 @@ def load_FoF_groups(directory, snapshot_num, loadIDs=False, endianness='native')
         
     return groups
             
-def load_subfind_groups(directory, snapshot_num, loadIDs=False, endianness='native'):
+def load_subfind_groups(directory, snapshot_num, loadIDs=False):
     if loadIDs:
         filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
-        ids = binary_group_io.read_IDs(filebase, endianness)
+        ids = binary_group_io.read_IDs(filebase)
     else:
         ids = None
         
     #Load first file
     filename = "%s/groups_%03d/subhalo_tab_%03d.0" % (directory, snapshot_num, snapshot_num)
-    props = binary_group_io.read_subfind_file(filename, None, endianness)[0]
+    props = binary_group_io.read_subfind_file(filename, None)[0]
     
     groups = []
     subgroups = []
     
     for i in range(props['num_files']):
         filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
-        groups_i, subgroups_i = binary_group_io.read_subfind_file(filename, ids, endianness)[1:3]
+        groups_i, subgroups_i = binary_group_io.read_subfind_file(filename, ids)[1:3]
         
         groups.extend(convert_to_fof_groups(groups_i, snapshot_num))
         subgroups.extend(convert_to_subfind_groups(subgroups_i, snapshot_num))
@@ -108,7 +108,7 @@ def convert_to_subfind_groups(subgroups_props, snapshot_num):
 def get_subgroup_idx(id, directory, snapshot_num, ids=None, endianness='native'):
     if ids is None:
         filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
-        ids = binary_group_io.read_IDs(filebase, endianness)
+        ids = binary_group_io.read_IDs(filebase)
         
         idx = np.flatnonzero(ids==id)[0]
         del ids
@@ -119,7 +119,7 @@ def get_subgroup_idx(id, directory, snapshot_num, ids=None, endianness='native')
     subgroup_counter = 0
     for i in itertools.count():
         filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
-        props, groups, subgroups = binary_group_io.read_subfind_file(filename, endianness)
+        props, groups, subgroups = binary_group_io.read_subfind_file(filename)
         
         for j in range(len(subgroups['npart'])):
             if subgroups['offsets'][j]<=idx and subgroups['offsets'][j]+subgroups['npart'][j]>idx:
@@ -133,10 +133,10 @@ def get_subgroup_idx(id, directory, snapshot_num, ids=None, endianness='native')
         del groups
         del subgroups
 
-def get_subgroup_ids(subgroup_num, directory, snapshot_num, ids=None, endianness='native'):
+def get_subgroup_ids(subgroup_num, directory, snapshot_num, ids=None):
     if ids is None:
         filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
-        ids = binary_group_io.read_IDs(filebase, endianness)
+        ids = binary_group_io.read_IDs(filebase)
         
     try:
         iterator = iter(subgroup_num)
@@ -148,7 +148,7 @@ def get_subgroup_ids(subgroup_num, directory, snapshot_num, ids=None, endianness
         #Open file until we find the right one
         for i in itertools.count():
             filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
-            props, groups, subgroups = binary_group_io.read_subfind_file(filename, endianness)
+            props, groups, subgroups = binary_group_io.read_subfind_file(filename, ids)
         
             if subgroup_num<props['num_subgroups']: break
         

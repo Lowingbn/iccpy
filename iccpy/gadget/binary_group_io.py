@@ -48,28 +48,32 @@ def read_group_file(filename, ids=None, endianness='native'):
     
     return props, res
     
-def read_subfind_file(filename, ids=None, endianness='native'):
+def read_subfind_file(filename, ids=None):
     """ Reads a binary Subfind group file """
     f = open(filename, mode='rb')
     
-    if endianness=='little':
-        u32 = '<u4'
-        f32 = '<f4'
-        u64 = '<u8'
-    elif endianness=='big':
-        u32 = '>u4'
-        f32 = '>f4'
-        u64 = '>u8'
-    elif endianness=='native':
-        u32 = 'u4'
-        f32 = 'f4'
-        u64 = 'u8'
+    u32 = '<u4'
+    f32 = '<f4'
+    u64 = '<u8'
     
     num_groups = np.fromfile(f, u32, 1)[0]
     num_groups_tot = np.fromfile(f, u32, 1)[0]
     num_ids = np.fromfile(f, u32, 1)[0]
     num_ids_tot = np.fromfile(f, u64, 1)[0]
     num_files = np.fromfile(f, u32, 1)[0]
+
+    if num_files>=65536:
+        u32 = '>u4'
+        f32 = '>f4'
+        u64 = '>u8'
+
+        f.seek(0,0)
+        num_groups = np.fromfile(f, u32, 1)[0]
+        num_groups_tot = np.fromfile(f, u32, 1)[0]
+        num_ids = np.fromfile(f, u32, 1)[0]
+        num_ids_tot = np.fromfile(f, u64, 1)[0]
+        num_files = np.fromfile(f, u32, 1)[0]
+
     num_subgroups = np.fromfile(f, u32, 1)[0]
     num_subgroups_tot = np.fromfile(f, u32, 1)[0]
     
@@ -139,26 +143,33 @@ def read_subfind_file(filename, ids=None, endianness='native'):
                             
     return props, groups, subgroups
     
-def read_IDs(filebase, endianness='native'):
+def read_IDs(filebase):
     """ Reads a binary ID group file """
-    if endianness=='little':
-        u32 = '<u4'
-        u64 = '<u8'
-    elif endianness=='big':
-        u32 = '>u4'
-        u64 = '>u8'
-    elif endianness=='native':
-        u32 = 'u4'
-        u64 = 'u8'
-        
+    filename = "%s.0" % (filebase)
+    f = open(filename, mode='rb')
+    
+    #Test if file is little endianess first
+    u32 = '<u4'
+    u64 = '<u8'
+
     filename = "%s.0" % (filebase)
     f = open(filename, mode='rb')
     f.seek(8, 1)
     num_ids = np.fromfile(f, u32, 1)[0]
     num_ids_total = np.fromfile(f, u64, 1)[0]
     num_files = np.fromfile(f, u32, 1)[0]
-    f.close()
+
+    if num_files>=65536:
+        u32 = '>u4'
+        u64 = '>u8'
+        
+        f.seek(8, 0)
+        num_ids = np.fromfile(f, u32, 1)[0]
+        num_ids_total = np.fromfile(f, u64, 1)[0]
+        num_files = np.fromfile(f, u32, 1)[0]
     
+    f.close()
+
     filelength = os.path.getsize(filename)
     
     if filelength == 28 + 8 * num_ids: idType = u64
