@@ -145,8 +145,8 @@ def get_subgroup_ids(subgroup_id, directory, ids=None):
     filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, file_num)
     props, groups, subgroups = binary_group_io.read_subfind_file(filename, ids)
     
-    offset = subgroups['offsets'][subgroup_nums]
-    len = subgroups['npart'][subgroup_nums]
+    offset = subgroups['offsets'][subgroup_num]
+    len = subgroups['npart'][subgroup_num]
     
     del groups
     del subgroups
