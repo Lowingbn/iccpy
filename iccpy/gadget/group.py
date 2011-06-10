@@ -133,7 +133,7 @@ def get_subgroup_idx(id, directory, snapshot_num, ids=None, endianness='native')
         del groups
         del subgroups
         
-def get_subgroup_ids(subgroup_id, ids=None):
+def get_subgroup_ids(subgroup_id, directory, ids=None):
     snapshot_num = int(subgroup_id/1e12)
     file_num = int((subgroup_id % 1e12)/1e8)
     subgroup_num = subgroup_id % 1e8
