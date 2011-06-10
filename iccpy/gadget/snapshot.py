@@ -64,14 +64,13 @@ def load_snapshot_files(directory, file, snapshot_num):
 
 def convert_to_physical(header, res):
     """ convert data from a Gadget snapshot into physical coordinates """
-    h = header['hubble0']
     z = header['redshift']
+    a = 1/(1+z)
     
-    res['pos'] *= (1+z) / h
-    res['vel'] = res['vel'] * np.sqrt(1+z) + iccpy.cosmology.hubble_param(1/(1+z), h) * res['pos']
-    res['mass'] /= h
+    res['pos'] *= a
+    res['vel'] = res['vel'] * np.sqrt(a) + iccpy.cosmology.hubble_param(a) * res['pos']
     
-    if 'sml' in res: res['sml'] *= (1+z) / h
+    if 'sml' in res: res['sml'] *= (1+z)
 
 def convert_to_comoving(header, res):
     """ convert data from a Gadget snapshot into co-moving coordinates """
