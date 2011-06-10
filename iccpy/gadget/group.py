@@ -132,17 +132,37 @@ def get_subgroup_idx(id, directory, snapshot_num, ids=None, endianness='native')
 
         del groups
         del subgroups
+        
+def get_subgroup_ids(subgroup_id, ids=None):
+    snapshot_num = int(subgroup_id/1e12)
+    file_num = int((subgroup_id % 1e12)/1e8)
+    subgroup_num = subgroup_id % 1e8
+    
+    if ids is None:
+        filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
+        ids = binary_group_io.read_IDs(filebase)
+    
+    filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, file_num)
+    props, groups, subgroups = binary_group_io.read_subfind_file(filename, ids)
+    
+    offset = subgroups['offsets'][subgroup_nums]
+    len = subgroups['npart'][subgroup_nums]
+    
+    del groups
+    del subgroups
+    
+    return set(ids[offset:offset+len])
 
-def get_subgroup_ids(subgroup_num, directory, snapshot_num, ids=None):
+def get_subgroups_ids(subgroup_nums, directory, snapshot_num, ids=None):
     if ids is None:
         filebase = "%s/groups_%03d/subhalo_ids_%03d" % (directory, snapshot_num, snapshot_num)
         ids = binary_group_io.read_IDs(filebase)
         
     try:
-        iterator = iter(subgroup_num)
+        iterator = iter(subgroup_nums)
         selectedIDs = set()
         for subgroup_num in iterator:
-            selectedIDs.update(get_subgroup_ids(subgroup_num, directory, snapshot_num, ids))
+            selectedIDs.update(get_subgroups_ids(subgroup_num, directory, snapshot_num, ids))
         return selectedIDs
     except TypeError: 
         #Open file until we find the right one
@@ -150,14 +170,14 @@ def get_subgroup_ids(subgroup_num, directory, snapshot_num, ids=None):
             filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
             props, groups, subgroups = binary_group_io.read_subfind_file(filename, ids)
         
-            if subgroup_num<props['num_subgroups']: break
+            if subgroup_nums<props['num_subgroups']: break
         
-            subgroup_num -= props['num_subgroups']
+            subgroup_nums -= props['num_subgroups']
             del groups
             del subgroups
     
-        offset = subgroups['offsets'][subgroup_num]
-        len = subgroups['npart'][subgroup_num]
+        offset = subgroups['offsets'][subgroup_nums]
+        len = subgroups['npart'][subgroup_nums]
     
         del groups
         del subgroups
