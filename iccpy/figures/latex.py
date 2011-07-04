@@ -13,7 +13,8 @@ latexParams = {'figure.dpi':150,
                'figure.subplot.left':0.15,
                'lines.linewidth':0.5,
                'lines.markersize':3,
-               'savefig.dpi':350}
+               'savefig.dpi':600,
+               'legend.fontsize':8}
 
 if __name__=='__main__':
     for x in sorted(pl.rcParams):

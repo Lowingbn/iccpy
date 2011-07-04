@@ -8,9 +8,10 @@ elements = ('Calcium', 'Carbon', 'Iron', 'Magnesium', 'Neon', 'Nitrogen', 'Oxyge
 helium_fracs = ('0.24', '0.25', '0.26', '0.27', '0.28', '0.29', '0.30')
 
 class GimicCooling:
-    def __init__(self, directory='/data/rw13/dph3nlm/BG_Tables/LowRes/CoolingTables/', helium_frac='0.24', Z=0, uv_background=False):
- 
-        files = self.get_files(directory)
+    def __init__(self, directory='/gpfs/data/rmdq85/wall_shock/Gadget/gadget3_cosma4/P-Gadget3-BG/BG_Tables/OldCoolingTables/',
+                  helium_frac='0.24', Z=0, uv_background=False):
+# directory='/data/rw13/dph3nlm/BG_Tables/LowRes/CoolingTables/'
+        files = get_gimic_files(directory)
         redshifts = []
         
         name = os.path.join(directory, files[0])
@@ -72,15 +73,79 @@ class GimicCooling:
         return cool
  
 
+class ElementCooling:
+    def __init__(self,  element, directory='/gpfs/data/rmdq85/wall_shock/Gadget/gadget3_cosma4/P-Gadget3-BG/BG_Tables/OldCoolingTables/',
+              Z=0, uv_background=False):
 
-    def get_files(self, directory):
-        """ find the files in the gimic directory """
-        files = os.listdir(directory)
-        files = sorted(f for f in files if f[:2] == 'z_')
-        # ignore nocompton and photodis
-        files =  files[:-2]
-        return files
+                 #directory='/data/rw13/dph3nlm/BG_Tables/LowRes/CoolingTables/'
+        if element not in elements:
+            raise Exception('Element must be one of '+str(elements))
+
+        files = get_gimic_files(directory)
+        redshifts = []
         
+        name = os.path.join(directory, files[0])
+        f = openFile(name, 'r')
+
+        header = f.root.Header
+        self.hydrogen_density_bins = header.Hydrogen_density_bins.read()
+        self.temperature_bins = header.Temperature_bins.read()
+        self.redshift = header.Redshift.read()
+
+        f.close()
+
+        solar_ratio = 10**Z
+        cool_rates = empty((len(files), 
+                            len(self.hydrogen_density_bins),
+                            len(self.temperature_bins)), dtype=float64)
+
+        for i,file in enumerate(files):
+            name = os.path.join(directory, file)
+            f = openFile(name, 'r')
+
+            node = getattr(f.root, element)
+            cooling = node.Cooling.read().astype(float64) * solar_ratio
+            heating = node.Heating.read().astype(float64) * solar_ratio
+
+            if uv_background:
+                cool_rates[i] = cooling - heating
+            else:
+                cool_rates[i] = cooling
+
+            redshifts.append(f.root.Header.Redshift.read())
+
+            f.close()
+
+        self.redshifts = array(redshifts, dtype=float64)
+        self.cool_rates = cool_rates
+        
+    def cooling_rate(self, n_H, T, z):
+        """ 
+        interpolates the cooling rates at the given values
+        n_H = hydrogen number density (/cm3)
+        T = temperature (K)
+        z = redshift
+        
+        all numpy broadcastable
+        currently uses linear interpolation
+        """
+        
+
+        cool = interp3d(self.redshifts, self.hydrogen_density_bins, self.temperature_bins, 
+                        self.cool_rates, z, n_H, T)
+
+        return cool
+ 
+def get_gimic_files(directory):
+    """ find the files in the gimic directory """
+    files = os.listdir(directory)
+    files = sorted(f for f in files if f[:2] == 'z_')
+    # ignore nocompton and photodis
+    files =  files[:-2]
+    return files
+
+
+
 def test():
     """ plot a graph of the cooling rate """
     import pylab as pl

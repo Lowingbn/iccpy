@@ -34,7 +34,7 @@ def p_histogram(x, y, bins=None, bin_range=None, perc=(0.15,0.85)):
             bin_range = (x.min(), x.max())
         bins = arange(b+1) * (bin_range[1]-bin_range[0])/float(b) + bin_range[0]
     except TypeError:
-        
+        # bins is a sequence
         bins = array(bins)
         
 
@@ -43,7 +43,6 @@ def p_histogram(x, y, bins=None, bin_range=None, perc=(0.15,0.85)):
 
     # 1 less value than bin edges, store the mean in vals[:,0]
     vals = empty((len(bins)-1, len(perc)+1), dtype=y.dtype)
-    print 'bins', bins
     
     for i in range(len(bins)-1):
         idx = flatnonzero(equal(x_bin,i+1))

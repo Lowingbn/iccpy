@@ -24,7 +24,7 @@ myr = 1e6 * yr
 # Cosmological Parameters
 
 
-HubbleConstant         = 2.3657686e-18   # 0.73
+HubbleConstant         = 2.3657686e-18   # s^-1 (0.73)
 OmegaMatter            = 0.238
 OmegaBaryon            = 0.0418
 
