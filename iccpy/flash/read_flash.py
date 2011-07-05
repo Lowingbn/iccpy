@@ -2,13 +2,11 @@
 Code created by Peter Creasey
 """
 from tables import openFile
-from numpy import mgrid, add, multiply, ones, flatnonzero, empty, float64, repeat, int32, unique, arange
+from numpy import mgrid, flatnonzero, empty, float64, repeat, int32, unique, arange, cumprod, array
 from itertools import izip
 
-def read_flash_names(filename, names):
+def read_flash_names(f, names):
     """ read arrays of the given names in a flash file """
-    f = openFile(filename, 'r')
-
     res = {}
 
     # need to check if flash 3
@@ -21,37 +19,44 @@ def read_flash_names(filename, names):
 
     for name in names:
         res[name] =  f.getNode(f.root, name).read()
-    f.close()
+
     return res
 
-def read_cell_centres(filename):
-    """ get cell centres of flash file cells """
-    names = ['block size', 'coordinates']
-    res = read_flash_names(filename, names) 
-  
-    block_size =  res['block size']
-    coords = res['coordinates']
+def blocks_to_cells(block_size, coords, b_shape):
+    """
+    Find cell coordinates from block coordinates
+    block_size - (n,dim) array of block sizes (e.g. bx,by,bz for n blocks)
+    coords - (n,dim) array of block centres (e.g cx,cy,cz for n blocks)
+    b_shape - shape of the block in cells, e.g. [8,8,8]
 
-    if coords.shape[1]==3:
-        z,y,x = (mgrid[:8,:8,:8]-3.5) * (1.0/8.0)
- 
-        x = multiply.outer(block_size[:,0], x) + multiply.outer(coords[:,0], ones(x.shape, dtype=block_size.dtype))
-        y = multiply.outer(block_size[:,1], y) + multiply.outer(coords[:,1], ones(y.shape, dtype=block_size.dtype))
-        z = multiply.outer(block_size[:,2], z) + multiply.outer(coords[:,2], ones(z.shape, dtype=block_size.dtype))
-  
-        return x,y,z
-
-    if coords.shape[1]==2:
-        y,x = (mgrid[:8,:8]-3.5) * (1.0/8.0)
- 
-        x = multiply.outer(block_size[:,0], x) + multiply.outer(coords[:,0], ones(x.shape, dtype=block_size.dtype))
-        y = multiply.outer(block_size[:,1], y) + multiply.outer(coords[:,1], ones(y.shape, dtype=block_size.dtype))
-
-        return x,y
-    x = (mgrid[:8]-3.5) * (1.0/8.0)
-    x = multiply.outer(block_size[:,0], x) + multiply.outer(coords[:,0], ones(x.shape, dtype=block_size.dtype))
+    returns cell_pos, cell_size
+    (n*M, d) arrays, where M = Prod(b_shape)
+    """
     
-    return (x,)
+    dim = block_size.shape[1]
+    nb = b_shape
+
+    cells_per_block = cumprod(nb)[-1]
+
+    nblocks = len(block_size)
+
+    if dim==3:
+        rev_nb = nb[::-1].reshape(dim,1,1,1)
+        p2 = (mgrid[:nb[2],:nb[1],:nb[0]]+0.5*(1.0 - rev_nb)) * (1.0/ rev_nb)
+        cell_pos = (p2.reshape((dim,cells_per_block))[::-1]).swapaxes(0,1)
+    elif dim==2:
+        rev_nb = nb[::-1].reshape(dim,1,1)
+        p2 = (mgrid[:nb[1],:nb[0]]+0.5*(1.0 - rev_nb)) * (1.0/ rev_nb)
+        cell_pos = (p2.reshape((dim,cells_per_block))[::-1]).swapaxes(0,1)
+    else:
+        p2 = (arange(nb[0])+0.5*(1.0 - nb[0])) * (1.0/ nb[0])
+        cell_pos = (p2.reshape((dim,cells_per_block))[::-1]).swapaxes(0,1)
+
+    all_cell_pos = block_size.reshape((nblocks,1,dim)) * cell_pos + coords.reshape((nblocks,1,dim))
+    all_cell_pos = all_cell_pos.reshape((nblocks * cells_per_block, dim))
+    all_cell_size = repeat(block_size[:,0] / nb[0], cells_per_block)
+    return all_cell_pos, all_cell_size
+
 
 def read_runtime_params(filename):
     """ read the cfl value """
@@ -69,26 +74,28 @@ def get_data(filename, vars=('dens', 'pres', 'lamb', 'temp', 'eint')):
     get_data(filename, vars=('dens', 'pres', 'lamb', 'temp', 'eint')):
     read flash data for a given filename
     """
-    coords = read_cell_centres(filename)
-    dim = len(coords)
-    names = ['node type', 'block size'] + list(vars)
-    data = read_flash_names(filename, names) 
+    f = openFile(filename, 'r')
+    
+    dim,nb = block_shape(f)
+    cells_per_block = cumprod(nb)[-1]
+    names = ['node type', 'block size', 'coordinates'] + list(vars)
+    data = read_flash_names(f, names) 
 
+    
     leaf_blocks = flatnonzero(data['node type']==1)
 
     result = {}
     for var in vars:
         result[var] = data[var][leaf_blocks].flatten()
 
-    result['cell size'] = repeat(data['block size'][leaf_blocks, 0] / 8.0, 8**dim)
+    block_sizes = data['block size'][leaf_blocks]
+    dim = block_sizes.shape[1]
+    
+    cell_pos, cell_size = blocks_to_cells(block_sizes, data['coordinates'][leaf_blocks], nb[:dim]) 
+    f.close()
 
-    pos = empty((leaf_blocks.size*(8**dim), dim), dtype=float64)
-
-    for i in range(dim):
-        pos[:,i] = coords[i][leaf_blocks].flatten()
-
-
-    result['pos'] = pos
+    result['cell size'] = cell_size
+    result['pos'] = cell_pos
     result['time'] = data['time']
 
     return result
@@ -99,14 +106,21 @@ def block_shape(f):
     returns
     dimension, (nxb, nyb, nzb)
     """
-    
-    params =  f.getNode(f.root, 'integer scalars').read()
-    p_dict = dict((name.rstrip(), val) for name, val in params)
+    if 'integer scalars' in f.root:    
+        params =  f.getNode(f.root, 'integer scalars').read()
+        p_dict = dict((name.rstrip(), val) for name, val in params)
 
-    dimension = p_dict['dimensionality']
-    nb = empty(dimension, dtype=int32)
-    for i,par in enumerate(['nxb', 'nyb', 'nzb'][:dimension]):
-        nb[i]= p_dict[par] 
+        dimension = p_dict['dimensionality']
+        nb = empty(dimension, dtype=int32)
+        for i,par in enumerate(['nxb', 'nyb', 'nzb'][:dimension]):
+            nb[i]= p_dict[par]
+    else:
+        print dir(f.getNode(f.root, 'block size'))
+        dimension = 3
+        params = f.getNode(f.root, 'simulation parameters')
+        nb = empty(dimension, dtype=int32)
+        for i in range(dimension):
+            nb[i] = params[0][5+i]
 
     return dimension, nb
 
@@ -187,7 +201,7 @@ def uniform_grid(filename, vars=['dens']):
         dmin, dmax = min_max[i]
         n_cells = uni_shape[i]
         
-        xyz.append((arange(n_cells)+0.5) * ((dmax-dmin)/n_cells) + dmin)
+        xyz.append((arange(n_cells)+0.5) * ((dmax-dmin)/float(n_cells)) + dmin)
     
     return tuple(xyz), result
 
