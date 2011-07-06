@@ -42,15 +42,19 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
     if particle_types is None:
         ranges = None
         particle_types = [ True ] * 6
+        num_to_read = total
     else:
         start = 0
+        num_to_read = 0
+        ranges = []
         for incl, num in zip(particle_types, nparts):
             if incl:
+                num_to_read += num
                 ranges.append((start, num))
             start += num
 
-    res['pos'] = readu(f, precision, ranges, header['swap_endian']).reshape((total, 3))
-    res['vel'] = readu(f, precision, ranges, header['swap_endian']).reshape((total, 3))
+    res['pos'] = readu(f, precision, ranges, 3, header['swap_endian']).reshape((num_to_read, 3))
+    res['vel'] = readu(f, precision, ranges, 3, header['swap_endian']).reshape((num_to_read, 3))
 
     res['id'] = readIDs(f, total, ranges, header['swap_endian'])
     
@@ -58,27 +62,27 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
     
     if gas:
         ngas = nparts[0]
-        res['therm'] = readu(f, float32, ngas, header['swap_endian'])
+        res['therm'] = readu(f, float32, ranges, 1, header['swap_endian'])
         if not ics:
-            res['rho'] = readu(f, float32, ngas, header['swap_endian'])
+            res['rho'] = readu(f, float32, ranges, 1, header['swap_endian'])
             if cooling:
-                res['Ne'] = readu(f, float32, ngas, header['swap_endian'])
+                res['Ne'] = readu(f, float32, ranges, 1, header['swap_endian'])
 
         if cooling:
-            res['NHI'] = readu(f, float32, ngas, header['swap_endian'])
-            res['NHeI'] = readu(f, float32, ngas, header['swap_endian'])
-            res['NHeIII'] = readu(f, float32, ngas, header['swap_endian'])
+            res['NHI'] = readu(f, float32, ranges, 1, header['swap_endian'])
+            res['NHeI'] = readu(f, float32, ranges, 1, header['swap_endian'])
+            res['NHeIII'] = readu(f, float32, ranges, 1, header['swap_endian'])
                 
         if not ics:
-            res['sml'] = readu(f, float32, ngas, header['swap_endian'])
+            res['sml'] = readu(f, float32, ranges, 1, header['swap_endian'])
         else:
             res['sml'] = 0.0
             
     if pot:
-        res['pot'] = readu(f, precision, total, header['swap_endian'])
+        res['pot'] = readu(f, precision, ranges, 1, header['swap_endian'])
 
     if accel:
-        res['accel'] = readu(f, precision, total * 3, header['swap_endian']).reshape((total, 3))    
+        res['accel'] = readu(f, precision, ranges, 3, header['swap_endian']).reshape((num_to_read, 3))    
     
     f.close()
     
@@ -175,7 +179,7 @@ def readIDs(f, count, ranges=None, swap_endian=False):
     
     print "ID type: ", dtype
     
-    return readu(f, dtype, ranges, swap_endian)
+    return readu(f, dtype, ranges, 1, swap_endian)
 
 def readMassBlock(f, header_masses, nparts, particle_types, swap_endian=False):
     #Any particle types which do not have their mass specified in the header will be 
@@ -191,7 +195,7 @@ def readMassBlock(f, header_masses, nparts, particle_types, swap_endian=False):
         start += num
     
     if len(mass_ranges)!=0:
-        mass_block = readu(f, precision, mass_ranges, header['swap_endian'])
+        mass_block = readu(f, precision, mass_ranges, 1, header['swap_endian'])
     
     offset = 0
     for mass, num, incl in zip(header_masses, nparts, particle_types):
@@ -209,7 +213,7 @@ def readMassBlock(f, header_masses, nparts, particle_types, swap_endian=False):
 
     return pmass
 
-def readu(f, dtype=None, ranges=None, swap_endian=False):
+def readu(f, dtype=None, ranges=None, components=1, swap_endian=False):
     """ Read a numpy array from the unformatted fortran file f """  
     data_size = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
     
@@ -221,11 +225,13 @@ def readu(f, dtype=None, ranges=None, swap_endian=False):
         arr = np.fromfile(f, rtype(dtype, swap_endian), count)
     else:
         file_pos = 0
-        arr = np.empty(np.sum([ range[1] for range in ranges]))
+        arr = np.empty(np.sum([ range[1] for range in ranges])*components)
         array_pos = 0
         for start_pos, length in ranges:
+            length *= components
+            start_pos *= components
             f.seek((start_pos-file_pos)*np.dtype(dtype).itemsize, 1)
-            array[array_pos:array_pos+length] = np.fromfile(f, rtype(dtype, swap_endian), length)
+            arr[array_pos:array_pos+length] = np.fromfile(f, rtype(dtype, swap_endian), length)
             file_pos = start_pos + length
             array_pos += length
         
