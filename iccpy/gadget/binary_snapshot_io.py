@@ -13,7 +13,7 @@ header_sizes_swap = (('>u4', 6), ('>f8', 6), ('>f8', 1), ('>f8', 1), ('>u4', 1),
              ('>u4', 6), ('>u4', 1), ('>u4', 1), ('>f8', 1), ('>f8', 1), ('>f8', 1), \
              ('>f8', 1), ('>u4', 1), ('>u4', 1), ('>u4', 6), ('>u4', 1), ('>u4', 1), (np.uint8, 56))
 
-def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=False, pot=False):
+def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=False, pot=False, particle_types=None):
     """ Reads a binary gadget file """
     f = open(filename, mode='rb')
     print "Loading file %s" % filename
@@ -38,30 +38,23 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
     else:
         precision = float32
         print 'Precision: Float'
+        
+    if particle_types is None:
+        ranges = None
+        particle_types = [ True ] * 6
+    else:
+        start = 0
+        for incl, num in zip(particle_types, nparts):
+            if incl:
+                ranges.append((start, num))
+            start += num
 
-    pos = readu(f, precision, total * 3, header['swap_endian']).reshape((total, 3))
-    vel = readu(f, precision, total * 3, header['swap_endian']).reshape((total, 3))
+    res['pos'] = readu(f, precision, ranges, header['swap_endian']).reshape((total, 3))
+    res['vel'] = readu(f, precision, ranges, header['swap_endian']).reshape((total, 3))
 
-    id = readIDs(f, total, header['swap_endian'])
+    res['id'] = readIDs(f, total, ranges, header['swap_endian'])
     
-    pmass = []
-    #Any particle types which do not have their mass specified in the header will be 
-    #found in a mass block
-    mass_len = sum([ num for mass, num in zip(masses, nparts) if num>0 and mass==0 ])
-    
-    if mass_len>0:
-        mass_block = readu(f, precision, mass_len, header['swap_endian'])
-    
-    offset = 0
-    for mass, num in zip(masses, nparts):
-        if num > 0:
-            if mass == 0:
-                pmass.append(mass_block[offset:offset+num])
-                offset += num
-            else:
-                pmass.append(mass)
-        else:
-            pmass.append(0)
+    res['mass'] = readMassBlock(f, masses, nparts, particle_types, header['swap_endian'])
     
     if gas:
         ngas = nparts[0]
@@ -88,11 +81,6 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
         res['accel'] = readu(f, precision, total * 3, header['swap_endian']).reshape((total, 3))    
     
     f.close()
-
-    res['pos'] = pos
-    res['vel'] = vel
-    res['mass'] = pmass
-    res['id'] = id
     
     return header, res
 
@@ -175,46 +163,75 @@ def read_header(f):
         assert(np.fromfile(f, '>u4', 1)[0] == 256)
     return header
     
-def readIDs(f, count=None, swap_endian=False):
+def readIDs(f, count, ranges=None, swap_endian=False):
     """ Read a the ID block from a binary GADGET snapshot file """
     data_size = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
+    f.seek(-4, 1)
     
     count = int(count)        
     if data_size / 4 == count: dtype = uint32
     elif data_size / 8 == count: dtype = uint64
     else: raise Exception('Incorrect number of IDs requested')
     
-    print "ID size: ", dtype
+    print "ID type: ", dtype
+    
+    return readu(f, dtype, ranges, swap_endian)
 
-    ask_size = np.dtype(dtype).itemsize * count
-    if ask_size > data_size:
-        raise Exception('Data requested larger than buffer')
+def readMassBlock(f, header_masses, nparts, particle_types, swap_endian=False):
+    #Any particle types which do not have their mass specified in the header will be 
+    #found in a mass block
 
-    arr = np.fromfile(f, rtype(dtype, swap_endian), count)
-    final_block = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
+    mass_ranges = []
+    pmass = []
+    start=0
+    for mass, num, incl in zip(header_masses, nparts, particle_types):
+        if num==0 or mass!=0: continue
+        
+        if incl: mass_ranges.append((start,num))
+        start += num
+    
+    if len(mass_ranges)!=0:
+        mass_block = readu(f, precision, mass_ranges, header['swap_endian'])
+    
+    offset = 0
+    for mass, num, incl in zip(header_masses, nparts, particle_types):
+        if not incl:
+            continue
+        
+        if num > 0:
+            if mass == 0:
+                pmass.append(mass_block[offset:offset+num])
+                offset += num
+            else:
+                pmass.append(mass)
+        else:
+            pmass.append(0)
 
-    # check the flag at the beginning corresponds to that at the end
-    assert(data_size == final_block)
+    return pmass
 
-    return arr   
-
-def readu(f, dtype=None, count=None, swap_endian=False):
+def readu(f, dtype=None, ranges=None, swap_endian=False):
     """ Read a numpy array from the unformatted fortran file f """  
     data_size = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
-    read_size = data_size
-
-    if dtype is not None:
-        count = int(count)    
-        ask_size = np.dtype(dtype).itemsize * count
-        if ask_size > read_size:
-            raise Exception('Data requested larger than buffer')
-
-        arr = np.fromfile(f, rtype(dtype, swap_endian), count)
-        read_size = read_size - ask_size
-    else:
+    
+    if dtype is None:
         arr = None
-
-    f.seek(read_size, 1)
+        f.seek(data_size, 1)
+    elif ranges is None:
+        count = data_size/np.dtype(dtype).itemsize
+        arr = np.fromfile(f, rtype(dtype, swap_endian), count)
+    else:
+        file_pos = 0
+        arr = np.empty(np.sum([ range[1] for range in ranges]))
+        array_pos = 0
+        for start_pos, length in ranges:
+            f.seek((start_pos-file_pos)*np.dtype(dtype).itemsize, 1)
+            array[array_pos:array_pos+length] = np.fromfile(f, rtype(dtype, swap_endian), length)
+            file_pos = start_pos + length
+            array_pos += length
+        
+        offset = file_pos*np.dtype(dtype).itemsize
+        f.seek(data_size-offset, 1)
+    
     final_block = np.fromfile(f, rtype(uint32, swap_endian), 1)[0]
 
     # check the flag at the beginning corresponds to that at the end
