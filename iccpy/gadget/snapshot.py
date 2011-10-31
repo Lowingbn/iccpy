@@ -61,6 +61,33 @@ def load_snapshot_files(directory, file, snapshot_num):
         filename = _get_filename(directory, file, snapshot_num, i)
         header, res = binary_snapshot_io.read_snapshot_file(filename, False)
         yield header, res
+        
+def load_snapshot(directory, file, snapshot_num):
+    """Combines a set of snapshot files to load a complete binary GADGET snapshot
+    
+    Arguments:
+    directory -- the location of the snapshot
+    file -- the file name
+    snapshot_num -- the number of the snapshot 
+    """
+    filename = _get_filename(directory, file, snapshot_num)
+    
+    header = binary_snapshot_io.read_snapshot_header(filename)
+    num_files = header['num_files'][0]
+    
+    pos = [ np.empty([header['npartTotal'][i]], 3) for i in range(6)]    
+    
+    for i in range(num_files):
+        filename = _get_filename(directory, file, snapshot_num, i)
+        h, res = binary_snapshot_io.read_snapshot_file(filename, False)
+        
+        idxs = np.insert(h['npart'], 0, 0)        
+        
+        for j in range(6):
+            pos[j][count[j]:count[j]+h['npart'][j]] = res['pos'][idxs[j]:idxs[j+1]]
+            
+            count[j] += h['npart'][j]
+
 
 def convert_to_physical(header, res):
     """ convert data from a Gadget snapshot into physical coordinates """
