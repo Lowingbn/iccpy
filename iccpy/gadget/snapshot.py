@@ -77,7 +77,7 @@ def load_snapshot(directory, file, snapshot_num):
     pos = [ np.empty([header['npartTotal'][i], 3]) for i in range(6)]
     vel = [ np.empty([header['npartTotal'][i], 3]) for i in range(6)]
     ids = [ np.empty(header['npartTotal'][i], dtype=res['id'].dtype) for i in range(6)]
-    mass = [ 0 if header['mass'][i]==0 else np.empty(header['npartTotal'][i]) for i in range(6)]
+    mass = [ 0 if header['mass'][i]!=0 or header['npartTotal'][i]==0 else np.empty(header['npartTotal'][i]) for i in range(6)]
     count = np.zeros(6)
 
     for i in range(num_files):
@@ -89,21 +89,20 @@ def load_snapshot(directory, file, snapshot_num):
             pos[j][count[j]:count[j]+h['npart'][j]] = res['pos'][idxs[j]:idxs[j+1]]
             vel[j][count[j]:count[j]+h['npart'][j]] = res['vel'][idxs[j]:idxs[j+1]]
             ids[j][count[j]:count[j]+h['npart'][j]] = res['id'][idxs[j]:idxs[j+1]]
-            if header['mass'][i]==0:
-                mass[j][count[j]:count[j]+h['npart'][j]] = res['mass'][idxs[j]:idxs[j+1]]
+            if header['mass'][j]==0 and header['npartTotal'][j]!=0:
+                mass[j][count[j]:count[j]+h['npart'][j]] = res['mass'][j]
             
             count[j] += h['npart'][j]
         
     header['num_files'][0] = 1
     header['npart'] = header['npartTotal']
     
-    res['pos'] = pos
-    res['vel'] = vel
+    res['pos'] = np.concatenate(pos)
+    res['vel'] = np.concatenate(vel)
     res['mass'] = mass
-    res['id'] = ids
+    res['id'] = np.concatenate(ids)
     
-    return header, mass
-
+    return header, res
 
 def convert_to_physical(header, res):
     """ convert data from a Gadget snapshot into physical coordinates """
