@@ -71,28 +71,38 @@ def load_snapshot(directory, file, snapshot_num):
     snapshot_num -- the number of the snapshot 
     """
     filename = _get_filename(directory, file, snapshot_num)
-    
-    header = binary_snapshot_io.read_snapshot_header(filename)
+    header, res = binary_snapshot_io.read_snapshot_file(filename, False)
     num_files = header['num_files'][0]
     
-    pos = [ np.empty([header['npartTotal'][i], 3]) for i in range(6)]    
-   
-    for i in range(6):
-        print pos[i].shape
-
+    pos = [ np.empty([header['npartTotal'][i], 3]) for i in range(6)]
+    vel = [ np.empty([header['npartTotal'][i], 3]) for i in range(6)]
+    ids = [ np.empty(header['npartTotal'][i], dtype=res['id'].dtype) for i in range(6)]
+    mass = [ 0 if header['mass'][i]==0 else np.empty(header['npartTotal'][i]) for i in range(6)]
     count = np.zeros(6)
 
     for i in range(num_files):
         filename = _get_filename(directory, file, snapshot_num, i)
         h, res = binary_snapshot_io.read_snapshot_file(filename, False)
         
-        idxs = np.insert(np.cumsum(h['npart']), 0, 0)
-        print idxs
-        
+        idxs = np.insert(np.cumsum(h['npart']), 0, 0)        
         for j in range(6):
             pos[j][count[j]:count[j]+h['npart'][j]] = res['pos'][idxs[j]:idxs[j+1]]
+            vel[j][count[j]:count[j]+h['npart'][j]] = res['vel'][idxs[j]:idxs[j+1]]
+            ids[j][count[j]:count[j]+h['npart'][j]] = res['id'][idxs[j]:idxs[j+1]]
+            if header['mass'][i]==0:
+                mass[j][count[j]:count[j]+h['npart'][j]] = res['mass'][idxs[j]:idxs[j+1]]
             
             count[j] += h['npart'][j]
+        
+    header['num_files'][0] = 1
+    header['npart'] = header['npartTotal']
+    
+    res['pos'] = pos
+    res['vel'] = vel
+    res['mass'] = mass
+    res['id'] = ids
+    
+    return header, mass
 
 
 def convert_to_physical(header, res):
