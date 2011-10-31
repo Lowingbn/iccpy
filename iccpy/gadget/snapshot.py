@@ -75,13 +75,19 @@ def load_snapshot(directory, file, snapshot_num):
     header = binary_snapshot_io.read_snapshot_header(filename)
     num_files = header['num_files'][0]
     
-    pos = [ np.empty([header['npartTotal'][i]], 3) for i in range(6)]    
-    
+    pos = [ np.empty([header['npartTotal'][i], 3]) for i in range(6)]    
+   
+    for i in range(6):
+        print pos[i].shape
+
+    count = np.zeros(6)
+
     for i in range(num_files):
         filename = _get_filename(directory, file, snapshot_num, i)
         h, res = binary_snapshot_io.read_snapshot_file(filename, False)
         
-        idxs = np.insert(h['npart'], 0, 0)        
+        idxs = np.insert(np.cumsum(h['npart']), 0, 0)
+        print idxs
         
         for j in range(6):
             pos[j][count[j]:count[j]+h['npart'][j]] = res['pos'][idxs[j]:idxs[j+1]]
