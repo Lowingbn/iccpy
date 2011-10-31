@@ -58,7 +58,7 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
 
     res['id'] = readIDs(f, total, ranges, header['swap_endian'])
     
-    res['mass'] = readMassBlock(f, masses, nparts, particle_types, header['swap_endian'])
+    res['mass'] = readMassBlock(f, precision, masses, nparts, particle_types, header['swap_endian'])
     
     if gas:
         ngas = nparts[0]
@@ -181,7 +181,7 @@ def readIDs(f, count, ranges=None, swap_endian=False):
     
     return readu(f, dtype, ranges, 1, swap_endian)
 
-def readMassBlock(f, header_masses, nparts, particle_types, swap_endian=False):
+def readMassBlock(f, precision, header_masses, nparts, particle_types, swap_endian=False):
     #Any particle types which do not have their mass specified in the header will be 
     #found in a mass block
 
@@ -195,7 +195,7 @@ def readMassBlock(f, header_masses, nparts, particle_types, swap_endian=False):
         start += num
     
     if len(mass_ranges)!=0:
-        mass_block = readu(f, precision, mass_ranges, 1, header['swap_endian'])
+        mass_block = readu(f, precision, mass_ranges, 1, swap_endian)
     
     offset = 0
     for mass, num, incl in zip(header_masses, nparts, particle_types):
