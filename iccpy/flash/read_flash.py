@@ -160,14 +160,16 @@ def uniform_grid(filename, vars=['dens']):
 
     # check it is really a uniform grid
     for i in range(dim):
-        if len(unique(block_sizes[:,i][leaf_blocks]))!=1:
-            raise Exception('Unequal leaf block sizes, not a uniformly adapted mesh')
+        bsizes_i = unique(block_sizes[:,i][leaf_blocks])
+        #if len(bsizes_i)!=1:
+        #    print 'Unique block sizes (dimension %d)'%i,  bsizes_i
+        #    raise Exception('Unequal leaf block sizes, not a uniformly adapted mesh')
         
     # assume uniform grid
     dxyz = block_sizes[leaf_blocks[0]]
     
     # index into the uniform grid
-    idx = (coords/dxyz - 0.5).astype(int32)
+    idx = (coords/dxyz).astype(int32)
     
     # shape of the uniform grid
     grid_n = idx.max(0) + 1
