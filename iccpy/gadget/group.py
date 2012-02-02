@@ -146,12 +146,12 @@ def get_subgroup_ids(subgroup_id, directory, ids=None):
     props, groups, subgroups = binary_group_io.read_subfind_file(filename, ids)
     
     offset = subgroups['offsets'][subgroup_num]
-    len = subgroups['npart'][subgroup_num]
+    group_len = subgroups['npart'][subgroup_num]
     
     del groups
     del subgroups
     
-    return set(ids[offset:offset+len])
+    return set(ids[offset:offset+group_len])
 
 def get_subgroups_ids(subgroup_nums, directory, snapshot_num, ids=None):
     if ids is None:
