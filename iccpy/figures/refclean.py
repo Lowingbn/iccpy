@@ -68,9 +68,28 @@ def refclean(tex_file, out_file='cleanedbib.bib'):
     f.close()
     print 'done.'
 
-
-
+def bib_remove_duplicates(bib_file, out_file='cleanedbib.bib'):
+    """ make a new bibliography (default cleanedbib.bib) with duplicates removed """
+    all_bib = bib_entries(bib_file)
+    f = open(out_file, 'w')
+    f.write('\n'.join(all_bib.values()))
+    f.write('\n')
+    f.close()    
 
 if __name__=='__main__':
+    if len(argv)<2:
+        print 'Usage refclean XYZ.tex|XYZ.bib'
+        print 'For .tex files, searches for references and keeps only used ones in bibliography'
+        print 'For .bib files, removes duplicates'
+        exit(0)
+        
     name = argv[1]
-    refclean(name)
+    if name[-4:]=='.tex':
+        print 'latex file:', name
+        refclean(name)
+    elif name[-4:]=='.bib':
+        print 'bibliography file:', name
+        bib_remove_duplicates(name)
+    else:
+        print 'unkown file:', name
+    
