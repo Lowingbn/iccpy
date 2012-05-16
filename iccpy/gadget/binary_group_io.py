@@ -175,7 +175,7 @@ def read_IDs(filebase):
     if filelength == 28 + 8 * num_ids: idType = u64
     elif filelength == 28 + 4 * num_ids: idType = u32
     else: raise Exception('Unable to determine size of ID type from file length')
-    
+
     idList = []
     
     for i in range(num_files):

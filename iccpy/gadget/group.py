@@ -169,7 +169,7 @@ def get_subgroups_ids(subgroup_nums, directory, snapshot_num, ids=None):
         for i in itertools.count():
             filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (directory, snapshot_num, snapshot_num, i)
             props, groups, subgroups = binary_group_io.read_subfind_file(filename, ids)
-        
+
             if subgroup_nums<props['num_subgroups']: break
         
             subgroup_nums -= props['num_subgroups']
@@ -196,10 +196,10 @@ def get_particles(directory, filename, snapshot_num, select_ids):
                 vels.append(vel)
     
         del res
-    
-    return np.array(ids), np.array(poses), np.array(vels), np.array([mass] * len(ids))
+
+    return np.array(ids), np.array(poses), np.array(vels), np.array([mass[0]] * len(ids))
 
 def get_subgroup_particles(directory, filename, snapshot_num, subgroup_nums):
-    selectedIDs = get_subgroup_ids(subgroup_nums, directory, snapshot_num)
+    selectedIDs = get_subgroups_ids(subgroup_nums, directory, snapshot_num)
     
     return get_particles(directory, filename, snapshot_num, selectedIDs)
