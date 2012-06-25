@@ -22,7 +22,7 @@ def update_params(par_file, newparams, buf=sys.stdout):
             continue
 
         
-        if line.find('=')==-1:
+        if '=' not in line:
             # not a parameter!
             raise Exception('Not a valid flash file with line \n%s'%line)
 
@@ -39,6 +39,37 @@ def update_params(par_file, newparams, buf=sys.stdout):
         buf.write(l)
         
     f.close()
+
+def params_to_dict(par_file):
+    
+    f = open(par_file, 'r')
+    res = {}
+    for line in f:
+        # go through each line, test if we should use the old parameter or new
+
+        sline = line.lstrip() # remove leading whitespace
+
+        if len(sline)==0:
+            # whitespace
+            continue        
+
+        if sline[0]=='#':
+            # just a comment
+            continue
+
+        
+        if '=' not in line:
+            # not a parameter!
+            raise Exception('Not a valid flash file with line \n%s'%line)
+
+        param, val = sline.split('=')
+        if '#' in val:
+            val = val[:val.find('#')]
+        
+        res[param.rstrip()] = val
+        
+    f.close()
+    return res
 
 
 if __name__=='__main__':
