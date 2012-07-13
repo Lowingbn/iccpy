@@ -56,3 +56,16 @@ def p_histogram(x, y, bins=None, bin_range=None, perc=(0.15,0.85)):
             
 
     return vals, bins
+
+def mp_errors(vals):
+    """ given an Nx3 array of N mean, lower, upper values, convert these to
+    a matplotlib style N array of means, and 2xN array of mean-lower, upper-mean as used in
+    pylab.errorbar(x, means, errors)
+    returns means, errors
+    """
+    means = vals[:,0]
+    errors = empty(shape=(2,vals.shape[0]), dtype=vals.dtype)
+    errors[0] = vals[:,0] - vals[:,1]
+    errors[1] = vals[:,2] - vals[:,0]
+
+    return means, errors
