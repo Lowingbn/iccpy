@@ -1,9 +1,9 @@
 import numpy as np
 from numpy import uint32, uint64, float64, float32
 
-header_names = ('npart', 'mass', 'time', 'redshift', 'flag_sfr', 'flag_feedback', 'npartTotal', 'flag_cooling', \
+header_names = ('num_particles', 'mass', 'time', 'redshift', 'flag_sfr', 'flag_feedback', 'num_particles_total', 'flag_cooling', \
                 'num_files', 'boxsize', 'omega0', 'omegaLambda', 'hubble0', 'flag_stellarage', 'flag_metals', \
-                'npartTotalHighWord', 'flag_entropy_instead_u', 'flag_doubleprecision', 'buffer')
+                'npartTotalHighWord', 'flag_entropy_instead_u', 'flag_doubleprecision', 'buffer')                
 
 header_sizes = ((uint32, 6), (float64, 6), (float64, 1), (float64, 1), (uint32, 1), (uint32, 1), \
              (uint32, 6), (uint32, 1), (uint32, 1), (float64, 1), (float64, 1), (float64, 1), \
@@ -104,7 +104,7 @@ def write_snapshot_file(filename, header, pos, vel, ids, masses=None, extra_data
             raise Exception(msg)
 
     # do some checks on the data
-    nparts = header['npart']
+    nparts = header['num_particles']
     
     mass_len = sum([ num for num, mass in zip(nparts, header['mass']) if mass==0 ])
     if mass_len!=0 and mass_len!=len(masses):
