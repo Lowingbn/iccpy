@@ -1,6 +1,9 @@
 import numpy as np
 import iccpy.constants as constants
 
+def density(r, mass, a):
+    return m*a/(2*np.pi*r*(r+a)**3)
+
 class Hernquist:
     def __init__(self, total_mass, scale_length, r_a=np.inf):
         self.total_mass = total_mass
