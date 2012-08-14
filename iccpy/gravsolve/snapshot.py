@@ -83,10 +83,10 @@ def convert_to_gadget(filename):
     else:
         mass_block = np.concatenate(mass_block)
     
-    header = dict((('npart', num_particles),
+    header = dict((('num_particles', num_particles),
                    ('mass', mass_header), ('time',time), ('redshift',0), 
                    ('flag_sfr',0) , ('flag_feedback',0), 
-                   ('npartTotal', num_particles), 
+                   ('num_particles_total', num_particles), 
                    ('flag_cooling',0), ('num_files',1), ('boxsize',1.0), \
                    ('omega0', 0.3), ('omegaLambda', 0.7), ('hubble0', 1.0), ('flag_stellarage',0), \
                    ('buffer', [0]*56), ('flag_metals', 0), ('npartTotalHighWord', [0,0,0,0,0,0]), 
