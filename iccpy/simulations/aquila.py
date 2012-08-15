@@ -1,6 +1,8 @@
 import h5py
 import glob
 
+sim_label = { 'aqc4':'C', 'aqd4':'D', 'aqe4':'E' }
+
 class Struct:
     def __init__(self, *args, **kwds):
         for arg in args:
@@ -11,12 +13,10 @@ class Struct:
         return str(self.__dict__)
 
 def get_dir(sim_name):
-    if sim_name=='aqc4':
-        return "/gpfs/data/Aquila/TO/Aq-C/400/data"
-    elif sim_name=='aqd4':
-        return "/gpfs/data/Aquila/TO/Aq-D/400/data"
-    elif sim_name=='aqe4':
-        return "/gpfs/data/Aquila/TO/Aq-E/400/data"
+    return "/gpfs/data/Aquila/TO/Aq-%s/400/data" % sim_label[sim_name]
+        
+def get_data_dir(sim_name):
+    return "/gpfs/data/Aquila/halo/data/Aq-%s-4" % sim_label[sim_name]
         
 def get_last_snapnum(sim_name):
     if sim_name=='aqc4': return 127
@@ -32,6 +32,11 @@ def read_header(filename):
     group = file['/Header']
     header = Struct(dict(group.attrs))
     return header
+    
+def read_data(sim_name):
+    file = get_data_dir(sim_name) + "/Aq-%s-4_halo_data.hdf5" % sim_label[sim_name]
+    data = { name : np.array(file['/stars'][name]) for name in file['/stars'].dtype.names }
+    return Struct(data)
     
 def read_attr(sim_name, snap_num, part_type, attr_name):
     files = get_files(sim_name, snap_num)
