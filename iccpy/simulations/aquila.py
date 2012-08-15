@@ -12,11 +12,9 @@ class Struct:
 def read_header(filename):
     file = h5py.File(filename, "r")
     group = file['/Header']
-    print group
-
-    header = Struct()
+    header = Struct(dict(group.attrs))
     return header
     
 if __name__=="__main__":
-    header = read_header("test")
-    print header.a
+    header = read_header("/gpfs/data/Aquila/TO/Aq-C/400/data/snapshot_127/aqc_5sig_400_ac_127.0.hdf5")
+    print header.NumFilesPerSnapshot
