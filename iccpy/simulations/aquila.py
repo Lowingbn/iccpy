@@ -1,5 +1,6 @@
 import h5py
 import glob
+import numpy as np
 
 sim_label = { 'aqc4':'C', 'aqd4':'D', 'aqe4':'E' }
 
@@ -24,7 +25,7 @@ def get_last_snapnum(sim_name):
     elif sim_name=='aqe4': return 511
 
 def get_files(sim_name, snap_num):
-    directory = get_dir(sim_name) + "/snapshot_%03d" % snapnum    
+    directory = get_dir(sim_name) + "/snapshot_%03d" % snap_num    
     return glob.glob(directory + "/*.hdf5")
 
 def read_header(filename):
@@ -34,13 +35,14 @@ def read_header(filename):
     return header
     
 def read_data(sim_name):
-    file = get_data_dir(sim_name) + "/Aq-%s-4_halo_data.hdf5" % sim_label[sim_name]
+    filename = get_data_dir(sim_name) + "/Aq-%s-4_halo_data.hdf5" % sim_label[sim_name]
+    file = h5py.File(filename, 'r')
     data = { name : np.array(file['/stars'][name]) for name in file['/stars'].dtype.names }
     return Struct(data)
     
 def read_attr(sim_name, snap_num, part_type, attr_name):
     files = get_files(sim_name, snap_num)
-    
+
     data = []
     for file in files:
         f = h5py.File(file, "r")
@@ -51,7 +53,11 @@ def read_attr(sim_name, snap_num, part_type, attr_name):
     return np.concatenate(data)
     
 if __name__=="__main__":
-    print read_attr("aqc4", 127, 4, 'ParticleID')
+    #ids = read_attr("aqd4", 127, 4, 'ParticleIDs')
+    #print np.where(ids==588263426)
 
-    header = read_header("/gpfs/data/Aquila/TO/Aq-C/400/data/snapshot_127/aqc_5sig_400_ac_127.0.hdf5")
-    print header.NumFilesPerSnapshot
+    data = read_data("aqd4")
+    idxs = np.where((data.origin==0) & (data.snap_last_in_sub==127))
+    ids_snapshot = data.ID[idxs]
+
+    print ids_snapshot
