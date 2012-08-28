@@ -3,6 +3,12 @@ import glob
 import numpy as np
 
 sim_label = { 'aqc4':'C', 'aqd4':'D', 'aqe4':'E' }
+max_id = { 'aqc4' : (53967599, 103), 'aqd4' : (41535584 61), 'aqe4' : (9223281412051116774, 80) }
+last_snapnum = { 'aqc4' : 127, 'aqd4' : 511, 'aqe4' : 511 }
+
+GAS = 0
+DARK_MATTER = DM = 1
+STARS = 4
 
 class Struct:
     def __init__(self, *args, **kwds):
@@ -18,11 +24,6 @@ def get_dir(sim_name):
         
 def get_data_dir(sim_name):
     return "/gpfs/data/Aquila/halo/data/Aq-%s-4" % sim_label[sim_name]
-        
-def get_last_snapnum(sim_name):
-    if sim_name=='aqc4': return 127
-    elif sim_name=='aqd4': return 511
-    elif sim_name=='aqe4': return 511
 
 def get_files(sim_name, snap_num):
     directory = get_dir(sim_name) + "/snapshot_%03d" % snap_num    
@@ -47,11 +48,16 @@ def read_attr(sim_name, snap_num, part_type, attr_name):
     for file in files:
         f = h5py.File(file, "r")
         dataset = np.array(f['/PartType%d/%s' % (part_type, attr_name)])
-        
         data.append(dataset)
         
     return np.concatenate(data)
     
+def make_unique_star_ids(sim_name, snap_num, ids):
+    child_ids = read_attr(sim_name, snap_num, 4,'ChildIDforStars')
+    unique_ids = max_id[sim_name][0] + (max_id[sim_name][1] + 1) * (1 + ids) + child_ids
+    return unique_ids
+
+
 if __name__=="__main__":
     #ids = read_attr("aqd4", 127, 4, 'ParticleIDs')
     #print np.where(ids==588263426)
