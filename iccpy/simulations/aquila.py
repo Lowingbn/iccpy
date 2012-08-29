@@ -3,7 +3,7 @@ import glob
 import numpy as np
 
 sim_label = { 'aqc4':'C', 'aqd4':'D', 'aqe4':'E' }
-max_id = { 'aqc4' : (53967599, 103), 'aqd4' : (41535584 61), 'aqe4' : (9223281412051116774, 80) }
+max_id = { 'aqc4' : (53967599, 103), 'aqd4' : (41535584, 61), 'aqe4' : (9223281412051116774, 80) }
 last_snapnum = { 'aqc4' : 127, 'aqd4' : 511, 'aqe4' : 511 }
 
 GAS = 0
@@ -56,14 +56,30 @@ def make_unique_star_ids(sim_name, snap_num, ids):
     child_ids = read_attr(sim_name, snap_num, 4,'ChildIDforStars')
     unique_ids = max_id[sim_name][0] + (max_id[sim_name][1] + 1) * (1 + ids) + child_ids
     return unique_ids
-
+    
+def get_halo_centre(sim_name, snap_num):
+    fname = get_dir(sim_name) + "/groups_%03d/subhalo_tab_%03d.0" % (snap_num, snap_num)
+    file = open(fname, "rb")
+    
+    #Load number of groups and subgroups
+    num_groups = np.fromfile(file, np.int32, 1)[0]
+    f.seek(20, 1)
+    num_subgroups = np.fromfile(file, np.int32, 1)[0]
+    f.seek(4 + 76*num_groups + 16*num_subgroups, 1)
+    
+    centre = np.fromfile(file, np.float32, 3)
+    file.close()
+    return centre
 
 if __name__=="__main__":
+    sim_name = "aqd4"
+    make_unique_star_ids(sim_name, last_snapnum[sim_name], 
+
     #ids = read_attr("aqd4", 127, 4, 'ParticleIDs')
     #print np.where(ids==588263426)
 
-    data = read_data("aqd4")
-    idxs = np.where((data.origin==0) & (data.snap_last_in_sub==127))
-    ids_snapshot = data.ID[idxs]
+    #data = read_data("aqd4")
+    #idxs = np.where((data.origin==0) & (data.snap_last_in_sub==127))
+    #ids_snapshot = data.ID[idxs]
 
-    print ids_snapshot
+    #print ids_snapshot
