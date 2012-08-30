@@ -1,7 +1,8 @@
 import numpy as np
+import pylab as pl
 import scipy.optimize
 
-def density_profile(pos, particle_mass=1, n_bins=20, centre=None):
+def density_profile(pos, particle_mass=1, n_bins=20, centre=None, r_min=None, r_max=None):
     """Calculates the spherically averaged density profile of a set of particles
     
     Keyword arguments:
@@ -15,8 +16,12 @@ def density_profile(pos, particle_mass=1, n_bins=20, centre=None):
         r_pts = np.sqrt(np.square(pos-centre).sum(1))
     
     #Find the minimum r that is non-zero   
-    r_min = np.sort(r_pts)[1]
-    r_bins = r_min * np.power(r_pts.max()/r_min, np.arange(n_bins)/(n_bins-1.0))
+    if r_min is None:
+        r_min = np.sort(r_pts)[1]
+    if r_max is None:
+        r_max = r_pts.max()
+        
+    r_bins = r_min * np.power(r_max/r_min, np.arange(n_bins)/(n_bins-1.0))
     
     if isinstance(particle_mass, np.ndarray):
         #Each particle has it's own mass
@@ -99,6 +104,16 @@ def fit_nfw(radii, density):
         return ret[0]
     else:        
         return None
+        
+def plot_nfw(rho_0, r_s, r_min=None, r_max=None):
+    if r_min==None: r_min = 0.01*r_s
+    if r_max==None: r_max = 100 * r_s
+    
+    r = np.logspace(np.log10(r_min), np.log10(r_max), 1000)
+    x = r/r_s
+    rho = rho_0 / (x*(1+x)**2)
+    
+    pl.loglog(r, rho)
     
 if __name__=="__main__":
     import pylab as pl
@@ -106,5 +121,7 @@ if __name__=="__main__":
     r = np.logspace(-2,3,1000)
     rho = 1000/(r*(1+r)**2)
     
-    print fit_nfw(r, rho)
+    params = fit_nfw(r, rho)
+    plot_nfw(*params)
+    pl.show()
     
