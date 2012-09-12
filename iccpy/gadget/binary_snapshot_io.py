@@ -23,7 +23,7 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
     # read the header
     header = read_header(f)
     
-    nparts = header['npart']
+    nparts = header['num_particles']
     masses = header['mass']
 
     print 'Particles', nparts

@@ -25,6 +25,9 @@ def get_dir(sim_name):
 def get_data_dir(sim_name):
     return "/gpfs/data/Aquila/halo/data/Aq-%s-4" % sim_label[sim_name]
 
+def get_fig_dir(sim_name):
+    return "/gpfs/data/Aquila/halo/figs/Aq-%s-4" % sim_label[sim_name]
+
 def get_files(sim_name, snap_num):
     directory = get_dir(sim_name) + "/snapshot_%03d" % snap_num    
     return glob.glob(directory + "/*.hdf5")
@@ -63,9 +66,9 @@ def get_halo_centre(sim_name, snap_num):
     
     #Load number of groups and subgroups
     num_groups = np.fromfile(file, np.int32, 1)[0]
-    f.seek(20, 1)
+    file.seek(20, 1)
     num_subgroups = np.fromfile(file, np.int32, 1)[0]
-    f.seek(4 + 76*num_groups + 16*num_subgroups, 1)
+    file.seek(4 + 76*num_groups + 16*num_subgroups, 1)
     
     centre = np.fromfile(file, np.float32, 3)
     file.close()
@@ -73,7 +76,7 @@ def get_halo_centre(sim_name, snap_num):
 
 if __name__=="__main__":
     sim_name = "aqd4"
-    make_unique_star_ids(sim_name, last_snapnum[sim_name], 
+    #make_unique_star_ids(sim_name, last_snapnum[sim_name], 
 
     #ids = read_attr("aqd4", 127, 4, 'ParticleIDs')
     #print np.where(ids==588263426)
