@@ -17,7 +17,7 @@ class Group:
             if self._parent.ids is None: self._parent._load_ids()
             #Return a slice of the parent array
             return self._parent.ids[self.offset:self.offset+self.num_particles]
-        else if name in self._block:
+        elif name in self._block:
             return self._block[name][self._idx]
         else:
             raise KeyError, "Unknown attribute name %s" % name
@@ -59,19 +59,24 @@ class SubfindCatalogue:
                  SO_VEL_DISPERSIONS=False, SO_BAR_INFO=False):
         self.directory = directory
         self.snapshot_num = snapshot_num
-        self.fof_group = None
-        self.subhalo = None
+        self.fof_group = []
+        self.subhalo = []
 
         self.ids = None
-        self.sub_lengths = None
-        self.sub_offsets = None
-        self.grp_lengths = None
-        self.grp_offsets = None
 
         self.id_size = self._determine_id_size()
-        
         num_files = self._determine_num_files()
-        print num_files
+
+        for i in range(num_files):
+            filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (self.directory, self.snapshot_num, self.snapshot_num, i)
+            groups, subhaloes = self._read_subtab_file(filename, float_type, self.id_size, SO_VEL_DISPERSIONS, SO_BAR_INFO)
+            self.subhalo.extend(subhaloes)
+            self.fof_group.extend(groups)
+
+        self.sub_lengths = np.array([ s.num_particles for s in self.subhalo ])
+        self.sub_offsets = np.array([ s.offset for s in self.subhalo ])
+        self.grp_lengths = np.array([ s.num_particles for s in self.fof_group ])
+        self.grp_offsets = np.array([ s.offset for s in self.fof_group ])
         
     def _determine_num_files(self):
         filename = "%s/groups_%03d/subhalo_tab_%03d.0" % (self.directory, self.snapshot_num, self.snapshot_num)
@@ -79,7 +84,7 @@ class SubfindCatalogue:
 
         f = open(filename, mode='rb')
         f.seek(20, 1)        
-        num_files = np.fromfile(f, u32, 1)[0]
+        num_files = np.fromfile(f, np.uint32, 1)[0]
         f.close()
         
         byteswap = (num_files<0) or (num_files>=65536)
@@ -123,18 +128,17 @@ class SubfindCatalogue:
         num_ids       = np.fromfile(f, np.uint32, 1)[0]
         num_ids_total = np.fromfile(f, np.uint64, 1)[0]
         num_files     = np.fromfile(f, np.uint32, 1)[0]
-        
-         # Assume large/negative ntask means wrong endian!
+
+        # Assume large/negative ntask means wrong endian!
         byteswap = (num_files<0) or (num_files>=65536)
-        
+
         if byteswap: 
-            num_ids.byteswap()
             num_files.byteswap()
         f.close()
 
         id_list = []
-        id_type = np.uint32 if self.id_size==4: else np.uint64
-    
+        id_type = np.uint32 if self.id_size==4 else np.uint64
+
         for i in range(num_files):
             filename = "%s.%d" % (filebase, i)
             f = open(filename, mode='rb')
@@ -151,7 +155,7 @@ class SubfindCatalogue:
     
         self.ids = np.concatenate(id_list)
         if byteswap: self.ids.byteswap()
-        
+
     def _read_subtab_file(self, fname, float_type=np.float32, id_size=4, SO_VEL_DISPERSIONS=False,
                           SO_BAR_INFO=False):
         f = open(fname,"r")
@@ -241,11 +245,11 @@ class SubfindCatalogue:
                 
         #Convert into set of fofgroups and subhaloes
         groups = [ Group(self, i, fof_block) for i in range(ngroups) ]
-        subhaloes = [ Group(self, i, subhalo_block) for i in range(ngroups) ]
+        subhaloes = [ Group(self, i, subhalo_block) for i in range(nsubgroups) ]
         
         return groups, subhaloes
     
-     def subhalo_index(self, ids, find_mbrank=False):
+    def subhalo_index(self, ids, find_mbrank=False):
         """Calculate subhalo membership for the given particle IDs"""
         if self.ids is None: self._load_ids()
         res = find_group_membership(ids, self.ids, self.sub_lengths, self.sub_offsets, find_mbrank)
@@ -256,3 +260,8 @@ class SubfindCatalogue:
         if self.ids is None: self._load_ids()
         res = find_group_membership(ids, self.ids, self.grp_lengths, self.grp_offsets)
         return res
+
+if __name__=="__main__":
+    cat = SubfindCatalogue("/gpfs/data/aquarius/halo_data/Aq-A/2", 1023)
+    print "Step 1"
+    print cat.subhalo[0].id[0]
