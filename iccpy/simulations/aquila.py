@@ -57,7 +57,7 @@ def read_attr(sim_name, snap_num, part_type, attr_name):
     
 def make_unique_star_ids(sim_name, snap_num, ids):
     child_ids = read_attr(sim_name, snap_num, 4,'ChildIDforStars')
-    unique_ids = max_id[sim_name][0] + (max_id[sim_name][1] + 1) * (1 + ids) + child_ids
+    unique_ids = max_id[sim_name][0] + (max_id[sim_name][1] + 1) * (1 + ids.astype(np.uint64)) + child_ids
     return unique_ids
     
 def get_halo_centre(sim_name, snap_num):
