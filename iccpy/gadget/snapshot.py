@@ -144,7 +144,23 @@ class Block(object):
         return self._data[key]
 
 class Snapshot:
+    """
+    A binary Gadget Snapshot
+    """
+
     def __init__(self, directory="", filename="", snapnum=None, additional_blocks=None):
+        """
+        Loads a header of the snapshot
+        
+        Args:
+            directory: the directory in which the snapshot files or directories can be found
+            filename: the complete filename or the root of the snapshot filenames
+            snapnum: which snapshot to load
+            additional_blocks: not yet supported
+        
+        A directory and/or a filename must be specified. If there is more than one snapshot in the 
+        directory the snapshot number must also be specified.
+        """
         self._files = _get_files(directory, filename, snapnum)
         self.blocks = None
         self.header = Header(self._files[0])

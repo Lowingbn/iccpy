@@ -144,10 +144,7 @@ def read_subfind_file(filename, ids=None):
     return props, groups, subgroups
     
 def read_IDs(filebase):
-    """ Reads a binary ID group file """
-    filename = "%s.0" % (filebase)
-    f = open(filename, mode='rb')
-    
+    """ Reads a binary ID group file """    
     #Test if file is little endianess first
     u32 = '<u4'
     u64 = '<u8'
