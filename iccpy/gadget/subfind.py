@@ -3,7 +3,7 @@ import time
 import iccpy.utils
 import os.path
 
-class Group:
+class Group(object):
     def __init__(self, parent, idx, block):
         self._parent = parent
         self._idx = idx
