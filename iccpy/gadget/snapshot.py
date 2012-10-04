@@ -5,6 +5,8 @@ import binary_snapshot_io
 
 from numpy import uint32, uint64, float64, float32
 
+_block_sizes = { "therm" : 1, "rho" : 1, "Ne" : 1, "NHI" : 1, "NHeI" : 1, "NHeIII" : 1, "sml" : 1, "pot" : 1, "accel" : 3 }
+
 def rtype(t, swap_endian):
     if not swap_endian: 
         return t
@@ -91,8 +93,9 @@ class Header:
             
 
 class Block(object):
-    def __init__(self, parent, dim, dtype, filenames, nparts, offsets):
+    def __init__(self, parent, name, dim, dtype, filenames, nparts, offsets):
         self.snapshot = parent
+        self.name = name
         self.dtype = dtype
         self.dtype_width = np.dtype(dtype).itemsize
         self.dim = dim
@@ -164,6 +167,7 @@ class Snapshot:
         self._files = _get_files(directory, filename, snapnum)
         self.blocks = None
         self.header = Header(self._files[0])
+        self.additional_blocks = additional_blocks
         
     def __str__(self):
         return self.__repr__()
@@ -180,13 +184,13 @@ class Snapshot:
         
         file_offsets = np.ones(len(self._files), dtype=np.uint32) * 256 + 8
         
-        self.blocks['pos'] = Block(self, 2, self.header.dtype, self._files, nparts, file_offsets)
+        self.blocks['pos'] = Block(self, "pos", 2, self.header.dtype, self._files, nparts, file_offsets)
         file_offsets += 3 * self.header.dtype_width * nparts_per_file + 8
         
-        self.blocks['vel'] = Block(self, 2, self.header.dtype, self._files, nparts, file_offsets)
+        self.blocks['vel'] = Block(self, "vel", 2, self.header.dtype, self._files, nparts, file_offsets)
         file_offsets += 3 * self.header.dtype_width * nparts_per_file + 8
         
-        self.blocks['id'] = Block(self, 1, self.header.id_type, self._files, nparts, file_offsets)
+        self.blocks['id'] = Block(self, "id", 1, self.header.id_type, self._files, nparts, file_offsets)
         file_offsets += self.header.id_width * nparts_per_file + 8
 
         #Mass blocks are evil
@@ -195,7 +199,7 @@ class Snapshot:
         nparts_mass[np.where(masses==0)] = nparts[np.where(masses==0)]
         
         if np.sum(nparts_mass)!=0:
-            self.blocks['mass'] = Block(self, 1, self.header.dtype, self._files, nparts_mass, file_offsets)
+            self.blocks['mass'] = Block(self, "mass", 1, self.header.dtype, self._files, nparts_mass, file_offsets)
             file_offsets += self.header.dtype_width * np.sum(nparts_mass, axis=1) + 8
             #Need to set non-read masses
             for i in range(6):
@@ -204,7 +208,14 @@ class Snapshot:
                     self.blocks['mass']._data[i] = np.array(masses[np.where(masses[:,i]!=0)[0][0],i])
         else:
             self.blocks['mass'] = self.header.mass
-        
+            
+        for name in self.additional_blocks:
+            if name not in __block_sizes:
+                raise KeyError, "Unknown block name %s" % name
+            
+            dim = 1 if __block_sizes[name]==1 else 2
+            self.blocks[name] = Block(self, name, dim, self.header.id_type, self._files, nparts, file_offsets)
+            file_offsets +=  __block_sizes[name] * self.header.id_width * nparts_per_file + 8
         
     def __getattr__(self, name):        
         if self.blocks is None:
