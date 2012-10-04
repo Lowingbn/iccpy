@@ -24,6 +24,14 @@ class Group:
             
     def __repr__(self):
         return 'iccpy.gadget.subfind.Group'
+        
+class FoFGroup(Base): 
+    def __init__(self, parent, idx, block):
+        super(FoFGroup, self).__init__(parent, idx, block)
+        
+class Subhalo(Base): 
+    def __init__(self, parent, idx, block):
+        super(Subhalo, self).__init__(parent, idx, block)        
     
 def find_group_membership(ids, groupids, length, offset, find_mbrank=False):
     """
@@ -247,8 +255,8 @@ class SubfindCatalogue:
                 subhalo_block[key] = subhalo_block[key].byteswap()                
                 
         #Convert into set of fofgroups and subhaloes
-        groups = [ Group(self, i, fof_block) for i in range(ngroups) ]
-        subhaloes = [ Group(self, i, subhalo_block) for i in range(nsubgroups) ]
+        groups = [ FoFGroup(self, i, fof_block) for i in range(ngroups) ]
+        subhaloes = [ Subhalo(self, i, subhalo_block) for i in range(nsubgroups) ]
         
         return groups, subhaloes
     
