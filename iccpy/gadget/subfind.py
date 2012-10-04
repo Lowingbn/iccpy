@@ -25,11 +25,11 @@ class Group:
     def __repr__(self):
         return 'iccpy.gadget.subfind.Group'
         
-class FoFGroup(Base): 
+class FoFGroup(Group): 
     def __init__(self, parent, idx, block):
         super(FoFGroup, self).__init__(parent, idx, block)
         
-class Subhalo(Base): 
+class Subhalo(Group): 
     def __init__(self, parent, idx, block):
         super(Subhalo, self).__init__(parent, idx, block)        
     
