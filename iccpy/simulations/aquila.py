@@ -46,7 +46,6 @@ def read_data(sim_name):
     
 def read_attr(sim_name, snap_num, part_type, attr_name):
     files = get_files(sim_name, snap_num)
-
     data = []
     for file in files:
         f = h5py.File(file, "r")
