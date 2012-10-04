@@ -21,6 +21,9 @@ class Group:
             return self._block[name][self._idx]
         else:
             raise KeyError, "Unknown attribute name %s" % name
+            
+    def __repr__(self):
+        return 'iccpy.gadget.subfind.Group'
     
 def find_group_membership(ids, groupids, length, offset, find_mbrank=False):
     """

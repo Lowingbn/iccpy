@@ -6,9 +6,12 @@ def density_profile(pos, particle_mass=1, n_bins=20, centre=None, r_min=None, r_
     """Calculates the spherically averaged density profile of a set of particles
     
     Keyword arguments:
+    pos           -- n x 3 array of positions
     particle_mass -- scalar or array (default 1.0)
-    n_bins -- number of bins to use (default 20)
-    centre -- if set then used as the origin (default None)
+    n_bins        -- number of bins to use (default 20)
+    centre        -- if set then used as the origin (default None)
+    r_min         -- the start radius for the profile (default None)
+    r_max         -- the outer radius for the profile (default None)    
     """
     if centre is None:
         r_pts = np.sqrt(np.square(pos).sum(1))
