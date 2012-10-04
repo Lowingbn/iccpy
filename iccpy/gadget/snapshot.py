@@ -210,12 +210,12 @@ class Snapshot:
             self.blocks['mass'] = self.header.mass
             
         for name in self.additional_blocks:
-            if name not in __block_sizes:
+            if name not in _block_sizes:
                 raise KeyError, "Unknown block name %s" % name
             
-            dim = 1 if __block_sizes[name]==1 else 2
+            dim = 1 if _block_sizes[name]==1 else 2
             self.blocks[name] = Block(self, name, dim, self.header.id_type, self._files, nparts, file_offsets)
-            file_offsets +=  __block_sizes[name] * self.header.id_width * nparts_per_file + 8
+            file_offsets +=  _block_sizes[name] * self.header.id_width * nparts_per_file + 8
         
     def __getattr__(self, name):        
         if self.blocks is None:
