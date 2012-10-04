@@ -1,6 +1,6 @@
 import os
 from tables import openFile
-from interp3d import interp3d
+from iccpy.utils import interp3d
 from numpy import float64, empty, array
 
 

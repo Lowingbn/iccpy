@@ -208,14 +208,15 @@ class Snapshot:
                     self.blocks['mass']._data[i] = np.array(masses[np.where(masses[:,i]!=0)[0][0],i])
         else:
             self.blocks['mass'] = self.header.mass
+        
+        if self.additional_blocks is not None:
+            for name in self.additional_blocks:
+                if name not in _block_sizes:
+                    raise KeyError, "Unknown block name %s" % name
             
-        for name in self.additional_blocks:
-            if name not in _block_sizes:
-                raise KeyError, "Unknown block name %s" % name
-            
-            dim = 1 if _block_sizes[name]==1 else 2
-            self.blocks[name] = Block(self, name, dim, self.header.id_type, self._files, nparts, file_offsets)
-            file_offsets +=  _block_sizes[name] * self.header.id_width * nparts_per_file + 8
+                dim = 1 if _block_sizes[name]==1 else 2
+                self.blocks[name] = Block(self, name, dim, self.header.id_type, self._files, nparts, file_offsets)
+                file_offsets +=  _block_sizes[name] * self.header.id_width * nparts_per_file + 8
         
     def __getattr__(self, name):        
         if self.blocks is None:
