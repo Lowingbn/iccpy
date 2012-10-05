@@ -64,7 +64,7 @@ class Header:
 
         #Also find length of id
         f = open(filename, mode='rb')        
-        f.seek(256+16 + self.num_particles_file * 6 * self.dtype_width)
+        f.seek(256+24 + self.num_particles_file * 6 * self.dtype_width)
         id_block_len = np.fromfile(f, rtype(uint32, self._data['swap_endian']), 1)[0]
         if id_block_len/self.num_particles_file==4:
             self.long_ids = False
@@ -127,7 +127,7 @@ class Block(object):
             
                 #Read the data from the file and place it in the data array
                 data = np.fromfile(file, self.dtype, self._nparts[i, key]*width)
-                
+
                 if self.dim==1:
                     self._data[key][count:count+self._nparts[i, key]] = data
                 else:
@@ -197,7 +197,7 @@ class Snapshot:
         masses = np.array([ header.mass for header in headers ])
         nparts_mass = np.zeros_like(nparts)
         nparts_mass[np.where(masses==0)] = nparts[np.where(masses==0)]
-        
+
         if np.sum(nparts_mass)!=0:
             self.blocks['mass'] = Block(self, "mass", 1, self.header.dtype, self._files, nparts_mass, file_offsets)
             file_offsets += self.header.dtype_width * np.sum(nparts_mass, axis=1) + 8

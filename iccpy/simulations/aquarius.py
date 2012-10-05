@@ -20,5 +20,5 @@ def get_halo_centre(sim_name):
     return get_subhaloes(sim_name)[0].pot_min
 
 if __name__=="__main__":
-    print load_last_snapshot("aqa2")
-    print get_halo_centre("aqa2")
+    print load_last_snapshot("aqa4")
+    print get_halo_centre("aqa4")

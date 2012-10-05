@@ -16,11 +16,11 @@ def moi(pos, particle_mass, max_radius, reduced=False, centre=None):
     else: pos_i = pos - centre
 
     r_pts = np.sqrt(np.square(pos_i).sum(1))
-    idx = np.where(r_pts<=max_radius)
+    idx = np.where(r_pts<=max_radius)[0]
 
     #First
     moi = np.zeros([3,3])
-    
+
     if reduced:
         if isinstance(particle_mass, np.ndarray):
             for i in idx:
@@ -40,4 +40,4 @@ def moi(pos, particle_mass, max_radius, reduced=False, centre=None):
 
     values, orient = scipy.linalg.eigh(moi)
 
-    return orient[:,0]
+    return values, orient
