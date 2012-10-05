@@ -205,7 +205,7 @@ class Snapshot:
             for i in range(6):
                 if np.sum(masses[:,i])!=0: 
                     self.blocks['mass']._loaded[i] = True
-                    self.blocks['mass']._data[i] = np.array(masses[np.where(masses[:,i]!=0)[0][0],i])
+                    self.blocks['mass']._data[i] = np.ones(headers[0].num_particles_total[i]) * headers[0].mass[i]  #np.array(masses[np.where(masses[:,i]!=0)[0][0],i])
         else:
             self.blocks['mass'] = self.header.mass
         

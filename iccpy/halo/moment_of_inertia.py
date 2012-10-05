@@ -16,7 +16,7 @@ def moi(pos, particle_mass, max_radius, reduced=False, centre=None):
     else: pos_i = pos - centre
 
     r_pts = np.sqrt(np.square(pos_i).sum(1))
-    idx = np.where(r_pts<=r)
+    idx = np.where(r_pts<=max_radius)
 
     #First
     moi = np.zeros([3,3])
