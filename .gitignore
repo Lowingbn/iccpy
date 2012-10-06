@@ -29,7 +29,13 @@ nosetests.xml
 # Translations
 *.mo
 
-# Mr Developer
+# IDE files
 .mr.developer.cfg
 .project
 .pydevproject
+*.bbprojectd
+
+# Mac file
+.DS_Store
+
+
