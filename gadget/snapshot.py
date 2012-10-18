@@ -45,7 +45,6 @@ def _get_files(directory, filename="", snapnum=None):
     
         full_dir = directory+"/snapdir_%03d/" % snapnum        
         filelist = os.listdir(full_dir)
-        import re
         expr = re.compile("%s_%03d.(\d+)" % (filename, snapnum))
         files = [ full_dir+name for name in filelist if expr.match(name)!=None ]
         if len(files)!=0:
