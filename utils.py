@@ -93,4 +93,20 @@ def interp3d(x_grid, y_grid, z_grid, vals, x_pts, y_pts, z_pts):
         (1-wx) * (wy * (wz * vals[x_idx1, y_idx0, z_idx0] + (1-wz) * vals[x_idx1, y_idx0, z_idx1]) +
         (1-wy) * (wz * vals[x_idx1, y_idx1, z_idx0] +  (1-wz) * vals[x_idx1, y_idx1, z_idx1]))
 
-    return res    
+    return res  
+    
+import numpy as np
+
+def points_uniform_on_sphere(n):
+    """ Generate a uniform distribution of n points on the surface of a unit sphere """
+    pts = np.empty([n, 3])
+
+    inc = np.pi * (3 - np.sqrt(5))
+    off = 2.0 / n
+    for k in range(0, n):
+        y = k * off - 1 + (off / 2)
+        r = np.sqrt(1 - y*y)
+        phi = k * inc
+        pts[k] = np.array([np.cos(phi)*r, y, np.sin(phi)*r])
+
+    return pts
