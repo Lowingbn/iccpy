@@ -51,7 +51,8 @@ class MergerTree:
 
 if __name__ == "__main__":
     #mt = MergerTree("/Users/bjlowin/Work/aquarius/halo_data/Aq-A/5/tree_127.0.hdf5")
-    mt = MergerTree("/gpfs/data/jch/Aquarius/Trees/Aq-A/4/trees/treedir_127/tree_127.0.hdf5")
+    #mt = MergerTree("/gpfs/data/jch/Aquarius/Trees/Aq-A/4/trees/treedir_127/tree_127.0.hdf5")
+    mt = MergerTree("/gpfs/data/jch/Aquarius/Trees/Aq-A/2/trees/treedir_127/tree_127.0.hdf5")
 
-    print mt.get_main_progenitors(32003800000109)
-    print mt.get_descendants(32003800000109)
+    print mt.get_main_progenitors(127000000000000)
+    print mt.get_descendants(127000000000000)

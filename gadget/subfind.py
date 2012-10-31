@@ -4,9 +4,10 @@ import iccpy.utils
 import os.path
 
 class Group(object):
-    def __init__(self, parent, idx, block):
+    def __init__(self, parent, idx, id, block):
         self._parent = parent
         self._idx = idx
+        self.id = id
         self._block = block
         self.num_particles = block["num_particles"][idx]
         self.offset = block["offset"][idx]        
@@ -26,12 +27,12 @@ class Group(object):
         return 'iccpy.gadget.subfind.Group'
         
 class FoFGroup(Group): 
-    def __init__(self, parent, idx, block):
-        super(FoFGroup, self).__init__(parent, idx, block)
+    def __init__(self, parent, idx, id, block):
+        super(FoFGroup, self).__init__(parent, idx, id, block)
         
 class Subhalo(Group): 
-    def __init__(self, parent, idx, block):
-        super(Subhalo, self).__init__(parent, idx, block)        
+    def __init__(self, parent, idx, id, block):
+        super(Subhalo, self).__init__(parent, idx, id, block)        
     
 def find_group_membership(ids, groupids, length, offset, find_mbrank=False):
     """
@@ -50,7 +51,7 @@ def find_group_membership(ids, groupids, length, offset, find_mbrank=False):
     mbrank = np.zeros(len(groupids), dtype=int)
     for igroup in range(len(length)):
         grnr[offset[igroup]:offset[igroup]+length[igroup]]   = igroup
-        mbrank[offset[igroup]:offset[igroup]+length[igroup]] = arange(length[igroup], dtype=int) + 1
+        mbrank[offset[igroup]:offset[igroup]+length[igroup]] = np.arange(length[igroup], dtype=int) + 1
 
     # Find group membership for each particle in the snapshot
     snap_grnr   = np.zeros(len(uids), dtype=int) - 1
@@ -80,7 +81,7 @@ class SubfindCatalogue:
 
         for i in range(num_files):
             filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (self.directory, self.snapshot_num, self.snapshot_num, i)
-            groups, subhaloes = self._read_subtab_file(filename, float_type, self.id_size, SO_VEL_DISPERSIONS, SO_BAR_INFO)
+            groups, subhaloes = self._read_subtab_file(filename, i, snapshot_num, float_type, self.id_size, SO_VEL_DISPERSIONS, SO_BAR_INFO)
             self.subhalo.extend(subhaloes)
             self.fof_group.extend(groups)
 
@@ -100,9 +101,9 @@ class SubfindCatalogue:
         
         byteswap = (num_files<0) or (num_files>=65536)
         if byteswap:
-            num_files.byteswap()
-
-        return num_files
+            return num_files.byteswap()
+        else:
+            return num_files
                 
     def _determine_id_size(self):
         filename = "%s/groups_%03d/subhalo_ids_%03d.0" % (self.directory, self.snapshot_num, self.snapshot_num)
@@ -118,11 +119,11 @@ class SubfindCatalogue:
          # Assume large/negative ntask means wrong endian!
         byteswap = (num_files<0) or (num_files>=65536)
         
-        if byteswap: num_ids.byteswap()    
+        if byteswap: num_ids = num_ids.byteswap()    
         f.close()
 
         filelength = os.path.getsize(filename)
-    
+
         if filelength == 28 + 8 * num_ids: return 8
         elif filelength == 28 + 4 * num_ids: return 4
         else: raise Exception('Unable to determine size of ID type from file length')
@@ -144,7 +145,7 @@ class SubfindCatalogue:
         byteswap = (num_files<0) or (num_files>=65536)
 
         if byteswap: 
-            num_files.byteswap()
+            num_files = num_files.byteswap()
         f.close()
 
         id_list = []
@@ -156,7 +157,7 @@ class SubfindCatalogue:
         
             f.seek(8, 1)
             num_ids = np.fromfile(f, np.uint32, 1)[0]
-            if byteswap: num_ids.byteswap()
+            if byteswap: num_ids = num_ids.byteswap()
             
             f.seek(16, 1)
             ids = np.fromfile(f, id_type, num_ids)
@@ -165,9 +166,9 @@ class SubfindCatalogue:
             id_list.append(ids)
     
         self.ids = np.concatenate(id_list)
-        if byteswap: self.ids.byteswap()
+        if byteswap: self.ids = self.ids.byteswap()
 
-    def _read_subtab_file(self, fname, float_type=np.float32, id_size=4, SO_VEL_DISPERSIONS=False,
+    def _read_subtab_file(self, fname, filenum, snapnum, float_type=np.float32, id_size=4, SO_VEL_DISPERSIONS=False,
                           SO_BAR_INFO=False):
         f = open(fname,"r")
         # Header
@@ -255,8 +256,9 @@ class SubfindCatalogue:
                 subhalo_block[key] = subhalo_block[key].byteswap()                
                 
         #Convert into set of fofgroups and subhaloes
-        groups = [ FoFGroup(self, i, fof_block) for i in range(ngroups) ]
-        subhaloes = [ Subhalo(self, i, subhalo_block) for i in range(nsubgroups) ]
+        id_base = snapnum * 1000000000000 + filenum * 100000000
+        groups = [ FoFGroup(self, i, id_base + i, fof_block) for i in range(ngroups) ]
+        subhaloes = [ Subhalo(self, i, id_base + i, subhalo_block) for i in range(nsubgroups) ]
         
         return groups, subhaloes
     
@@ -275,4 +277,4 @@ class SubfindCatalogue:
 if __name__=="__main__":
     cat = SubfindCatalogue("/gpfs/data/aquarius/halo_data/Aq-A/2", 1023)
     print "Step 1"
-    print cat.subhalo[0].id[0]
+    print cat.subhalo[1].id

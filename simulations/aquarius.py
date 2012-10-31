@@ -1,7 +1,7 @@
 import iccpy.gadget
 
 sim_label = { 'aqa' : 'A', 'aqb' : 'B', 'aqc':'C', 'aqd':'D', 'aqe':'E' }
-last_snapnum = { 'aqa2' : 1023, 'aqa3' : 511, 'aqa4' : 1023 }
+last_snapnum = { 'aqa2' : 1023, 'aqa3' : 511, 'aqa4' : 1023, 'aqb2' : 127, 'aqc2' : 127, 'aqd2' : 127, 'aqe2' : 127 }
 
 def get_dir(sim_name):
     return "/gpfs/data/aquarius/halo_data/Aq-%s/%c/" % (sim_label[sim_name[0:3]], sim_name[3])
