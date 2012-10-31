@@ -57,9 +57,13 @@ def _get_files(directory, filename="", snapnum=None):
     raise IOError("Unable to find Gadget snapshot file %s\n" % errorString)
              
 class GadgetBinaryHeader:
-    def __init__(self, filename):
+    def __init__(self, filename, format=1):
         """ Read the binary GADGET header """
-        header = binary_snapshot_io.read_snapshot_header(filename)
+        file = open(filename, mode='rb')
+        if format==2: file.seek(0) # FIX
+        header = binary_snapshot_io.read_header(file)
+        file.close()
+        
         self._data = header
         del self._data['buffer']
         
@@ -154,8 +158,10 @@ class GadgetBinaryBlock(object):
         if not self._loaded[key]:
             self._load(key)
         return self._data[key]
+        
+##########################################################################################        
 
-class GadgetBinarySnapshot:
+class GadgetBinaryFormat1Snapshot:
     """
     A binary Gadget Snapshot
     """
@@ -254,185 +260,7 @@ class GadgetBinarySnapshot:
         return self._blocks[name]
        
 ##########################################################################################       
-        
-_header_hdf5_names = { 'num_particles' : 'NumPart_ThisFile', 'mass' : 'MassTable', 'time' : 'Time', 'redshift' : 'Redshift', \
-                       'flag_sfr' : 'Flag_Sfr', 'flag_feedback' : 'Flag_Feedback', 'num_particles_total' : 'NumPart_Total', \
-                       'flag_cooling' : 'Flag_Cooling', 'num_files' : 'NumFilesPerSnapshot', 'boxsize' : 'BoxSize', 'omega0' : 'Omega0', \
-                       'omegaLambda' : 'OmegaLambda', 'hubble0' : 'HubbleParam', 'flag_stellarage' : 'Flag_StellarAge', \
-                       'flag_metals' : 'Flag_Metals', 'npartTotalHighWord' : 'NumPart_Total_HighWord' }
-        
-class GadgetHDF5Header:
-    def __init__(self, filename):
-        """ Read the HDF5 GADGET header """
-        file = h5py.File(filename, "r")
-        data = dict(file['/Header'].attrs)
-        self._data = {}
-        
-        for key in _header_hdf5_names.keys():
-            self._data[key] = data[_header_hdf5_names[key]]
-            
-        self.num_particles_file = np.sum(self._data['num_particles'])
-        
-        partIdx = np.where(self._data['num_particles']!=0)[0][0]
-        self.dtype = file["/PartType%d/Coordinates" % partIdx].dtype
-        
-        self._data['flag_doubleprecision'] = 1 if self.dtype==np.dtype("<f8") or self.dtype==np.dtype(">f8") else 0
-        self.dtype_width = np.dtype(self.dtype).itemsize
-
-        self.id_type = file["/PartType%d/ParticleIDs" % partIdx].dtype
-        self.id_width = np.dtype(self.id_type).itemsize
-        self.long_ids = True if self.id_width==8 else False
-        
-        file.close()                        
-                                
-    def __str__(self):
-        return self.__repr__()
-            
-    def __repr__(self):
-        return "Gadget HDF5 Snapshot Header:\n" + str(self._data)
-        
-    def __dir__(self):
-        return sorted(set((dir(type(self)) + list(self.__dict__) + self._data.keys())))
-    
-    def __getattr__(self, name):
-        if name not in self._data:
-            raise KeyError, "'%s'" % name
-        return self._data[name]       
-        
-class GadgetHDF5Block(object):
-    def __init__(self, parent, name, real_name, filenames, nparts):
-        self.snapshot = parent
-        self.name = name
-        self._real_name = real_name
-        self._loaded = np.zeros(6, dtype=np.bool)
-        self._filenames = list(filenames)
-        self._nparts = nparts.copy()
-        self._data = [ 0 ] * 6
-        
-    def _load(self, key):
-        num_particles = np.sum(self._nparts[:, key])
-        
-        if num_particles==0: self._data[key] = np.empty(0, dtype=self.snapshot.header.dtype)
-        else:
-            #We need to look at a dataset in order to know its shape
-            file = h5py.File(self._filenames[0], "r")
-            if self._real_name in file["/PartType%d" % key].keys():            
-                dataset = file["/PartType%d/%s" % (key, self._real_name)]
-                shape = list(dataset.shape)
-                shape[0] = num_particles
-                self._data[key] = np.empty(shape, dtype=dataset.dtype)
-                file.close()
-    
-                count = 0
-                for i, filename in enumerate(self._filenames):
-                    file = h5py.File(filename, "r")
-                    dataset = file["/PartType%d/%s" % (key, self._real_name)]
-                    self._data[key][count:count+self._nparts[i, key]] = np.array(dataset)
-                    file.close()
-                    count += self._nparts[i, key]
-            else:
-                file.close()
-                self._data[key] = np.empty(0, dtype=self.snapshot.header.dtype)
-        
-        self._loaded[key] = True        
-        
-    def __getitem__(self, key):
-        if not key>=0 and key<5:
-            raise IndexError, "Particle type index out of range %d" % i
-    
-        if not self._loaded[key]:
-            self._load(key)
-        return self._data[key]        
-        
-class GadgetHDF5Snapshot:
-    """
-    A HDF5 Gadget Snapshot
-    """
-
-    def __init__(self, directory="", filename="", snapnum=None, files=None, additional_blocks=None):
-        """
-        Creates a Gadget HDF5 snapshot object and loads the header
-        
-        Keyword arguments:
-            directory          -- the directory in which the snapshot files or directories can be found
-            filename:          -- the complete filename or the root of the snapshot filenames
-            snapnum:           -- which snapshot to load
-            files:             -- a list of files to load
-            additional_blocks  -- a list of blocks other than the basic that exist in the snapshot
-        
-        A directory and/or a filename or a list of files must be specified. If there is more than one snapshot in the 
-        directory the snapshot number must also be specified.
-        """
-        if files is None:
-            self._files = _get_files(directory, filename, snapnum)
-        else:
-            self._files = list(files)
-        self._blocks = None
-        self._additional_blocks = additional_blocks
-        
-        #Load just the first header (others should be the same)
-        self.header = GadgetHDF5Header(self._files[0])
-        
-        #Set the number of particles in the snapshot based on whether loading a single file
-        #or all of them 
-        if len(files)==1:
-            self.num_particles = self.header.num_particles
-        else:
-            self.num_particles = self.header.num_particles_total
-        
-        del self.header._data['num_particles']
-        del self.header.num_particles_file
                 
-    def __str__(self):
-        return self.__repr__()
-    
-    def __repr__(self):
-        return "Gadget HDF5 Snapshot"
-    
-    def __dir__(self): 
-        if self._blocks is None:
-            self._load_blocks()    
-        return sorted(set((list(self.__dict__) + self._blocks.keys())))         
-        
-    def _load_blocks(self):
-        headers = [ GadgetHDF5Header(self._files[i]) for i in range(len(self._files)) ]
-        self._blocks = {}
-                
-        nparts = np.array([ header.num_particles for header in headers ])
-        nparts_per_file = np.sum(nparts, axis=1)
-       
-        self._blocks['pos'] = GadgetHDF5Block(self, 'pos', 'Coordinates', self._files, nparts)
-        self._blocks['vel'] = GadgetHDF5Block(self, 'vel', 'Velocities', self._files, nparts)
-        self._blocks['id'] = GadgetHDF5Block(self, 'id', 'ParticleIDs', self._files, nparts)                
-
-        #Handle the evil mass block
-        masses = np.array([ header.mass for header in headers ])
-        nparts_mass = np.zeros_like(nparts)
-        nparts_mass[np.where(masses==0)] = nparts[np.where(masses==0)]
-        
-        if np.sum(nparts_mass)!=0:
-            self._blocks['mass'] = GadgetHDF5Block(self, "mass", "Mass", self._files, nparts_mass)
-            #Need to set non-read masses
-            for i in range(6):
-                if np.sum(masses[:,i])!=0:
-                    self._blocks['mass']._loaded[i] = True
-                    self._blocks['mass']._data[i] = np.ones(headers[0].num_particles_total[i]) * headers[0].mass[i]  #np.array(masses[np.where(masses[:,i]!=0)[0][0],i])
-        else:
-            self._blocks['mass'] = self.header.mass
-            
-        if self._additional_blocks is not None:
-            for name in self._additional_blocks:
-                 self._blocks[_convert(name)] = GadgetHDF5Block(self, _convert(name), name, self._files, nparts)
-                
-    def __getattr__(self, name):        
-        if self._blocks is None:
-            self._load_blocks()
-    
-        if name not in self._blocks:
-            raise KeyError, "Unknown block name %s" % name
-        
-        return self._blocks[name]        
-        
 def load_snapshot(filename="", directory="", snapnum=None, additional_blocks=None):
     """
     Returns a Gadget snapshot object. Loads both binary and HDF5 snapshots based on the 
@@ -449,20 +277,13 @@ def load_snapshot(filename="", directory="", snapnum=None, additional_blocks=Non
     
     files = _get_files(directory, filename, snapnum)
     
-    if files[0][-5:]==".hdf5":
-        return GadgetHDF5Snapshot(files=files, additional_blocks=additional_blocks)
-    else:
-        return GadgetBinarySnapshot(files=files, additional_blocks=additional_blocks)
+    return GadgetBinaryFormat1Snapshot(files=files, additional_blocks=additional_blocks)
         
 def load_snapshot_files(filename="", directory="", snapnum=None, additional_blocks=None):
     files = _get_files(directory, filename, snapnum)
 
-    if files[0][-5:]==".hdf5":
-        for file in files:
-            yield GadgetHDF5Snapshot(files=[file], additional_blocks=additional_blocks)
-    else:
-        for file in files:
-            yield GadgetBinarySnapshot(files=[file], additional_blocks=additional_blocks)
+    for file in files:
+        yield GadgetBinaryFormat1Snapshot(files=[file], additional_blocks=additional_blocks)
 
 def save_snapshot(filename, header, pos, vel, ids=None, masses=None, extra_data=None):
     if ids is None:
