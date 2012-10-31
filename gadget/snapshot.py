@@ -60,7 +60,7 @@ class GadgetBinaryHeader:
     def __init__(self, filename, format=1):
         """ Read the binary GADGET header """
         file = open(filename, mode='rb')
-        if format==2: file.seek(0) # FIX
+        if format==2: file.seek(16) # Test
         header = binary_snapshot_io.read_header(file)
         file.close()
         
@@ -159,11 +159,21 @@ class GadgetBinaryBlock(object):
             self._load(key)
         return self._data[key]
         
-##########################################################################################        
+##########################################################################################
+
+def _determine_binary_format(filename):
+    f = open(filename, mode='rb')
+    r = np.fromfile(f, np.uint32, 1)[0]
+    if r==8 or r==134217728:
+        return 2
+    elif r==256 or r==65536:
+        return 1
+    else:
+        raise IOError, "File corrupt. First integer is: " + str(r)
 
 class GadgetBinaryFormat1Snapshot:
     """
-    A binary Gadget Snapshot
+    A binary format 1 Gadget Snapshot
     """
 
     def __init__(self, directory="", filename="", snapnum=None, files=None, additional_blocks=None):
@@ -200,7 +210,7 @@ class GadgetBinaryFormat1Snapshot:
         return self.__repr__()
     
     def __repr__(self):
-        return "Gadget Binary Snapshot"
+        return "Gadget Binary Format 1 Snapshot"
         
     def __dir__(self): 
         if self._blocks is None:
@@ -258,32 +268,114 @@ class GadgetBinaryFormat1Snapshot:
             raise KeyError, "Unknown block name %s" % name
         
         return self._blocks[name]
+        
+class GadgetBinaryFormat2Snapshot:
+    """
+    A binary format 2 Gadget Snapshot
+    """
+
+    def __init__(self, directory="", filename="", snapnum=None, files=None):
+        """
+        Creates a Gadget binary snapshot object and loads the header
+        
+        Keyword arguments:
+            directory          -- the directory in which the snapshot files or directories can be found
+            filename:          -- the complete filename or the root of the snapshot filenames
+            snapnum:           -- which snapshot to load
+            files:             -- a list of files to load
+        
+        A directory and/or a filename or a list of files must be specified. If there is more than one snapshot in the 
+        directory the snapshot number must also be specified.
+        """
+        if files is None:
+            self._files = _get_files(directory, filename, snapnum)
+        else:
+            self._files = list(files)
+        self._blocks = None
+        self.header = GadgetBinaryHeader(self._files[0], format=2)
+        
+        if len(files)==1:
+            self.num_particles = self.header.num_particles
+        else:
+            self.num_particles = self.header.num_particles_total
+        
+        del self.header._data['num_particles']
+        del self.header.num_particles_file
+
+    def __str__(self):
+        return self.__repr__()
+    
+    def __repr__(self):
+        return "Gadget Binary Format 2 Snapshot"
+        
+    def __dir__(self): 
+        if self._blocks is None:
+            self._load_blocks()   
+        return sorted(set((list(self.__dict__) + self._blocks.keys())))
+        
+    def _load_blocks(self):
+        headers = [ GadgetBinaryHeader(self._files[i], ,format=2) for i in range(len(self._files)) ]
+        self._blocks = {}
+                
+        nparts = np.array([ header.num_particles for header in headers ])
+        nparts_per_file = np.sum(nparts, axis=1)
+        
+        file_offsets = np.ones(len(self._files), dtype=np.uint32) * 256 + 8 + 32
+        
+        self._blocks['pos'] = GadgetBinaryBlock(self, "pos", 2, self.header.dtype, self._files, nparts, file_offsets)
+        file_offsets += 3 * self.header.dtype_width * nparts_per_file + 8 + 16
+        
+        self._blocks['vel'] = GadgetBinaryBlock(self, "vel", 2, self.header.dtype, self._files, nparts, file_offsets)
+        file_offsets += 3 * self.header.dtype_width * nparts_per_file + 8 + 16
+        
+        self._blocks['id'] = GadgetBinaryBlock(self, "id", 1, self.header.id_type, self._files, nparts, file_offsets)
+        file_offsets += self.header.id_width * nparts_per_file + 8 + 16
+        
+        #TODO: Finish loading the rest of the file
+        
+        
+    def __getattr__(self, name):        
+        if self._blocks is None:
+            self._load_blocks()
+    
+        if name not in self._blocks:
+            raise KeyError, "Unknown block name %s" % name
+        
+        return self._blocks[name]
        
 ##########################################################################################       
                 
 def load_snapshot(filename="", directory="", snapnum=None, additional_blocks=None):
     """
-    Returns a Gadget snapshot object. Loads both binary and HDF5 snapshots based on the 
-    file extension
-    
+    Returns a Gadget snapshot object. Loads both binary format 1 and format 2 snapshots.    
     Keyword arguments:
         filename:          -- the complete filename or the root of the snapshot filenames
         directory          -- the directory in which the snapshot files or directories can 
                               be found
         snapnum:           -- which snapshot to load
         additional_blocks  -- a list of blocks other than the basic ones that exist in the 
-                              snapshot
+                              snapshot (used for format 1 only)
     """
     
     files = _get_files(directory, filename, snapnum)
     
-    return GadgetBinaryFormat1Snapshot(files=files, additional_blocks=additional_blocks)
+    format = _determine_binary_format(files[0])
+    if format==1:
+        return GadgetBinaryFormat1Snapshot(files=files, additional_blocks=additional_blocks)
+    elif format==2:
+        return GadgetBinaryFormat2Snapshot(files=files)
         
 def load_snapshot_files(filename="", directory="", snapnum=None, additional_blocks=None):
     files = _get_files(directory, filename, snapnum)
+    
+    format = _determine_binary_format(files[0])    
 
-    for file in files:
-        yield GadgetBinaryFormat1Snapshot(files=[file], additional_blocks=additional_blocks)
+    if format==1:
+        for file in files:
+            yield GadgetBinaryFormat1Snapshot(files=[file], additional_blocks=additional_blocks)
+    elif format==2:       
+        for file in files:      
+            yield GadgetBinaryFormat2Snapshot(files=[file])           
 
 def save_snapshot(filename, header, pos, vel, ids=None, masses=None, extra_data=None):
     if ids is None:
