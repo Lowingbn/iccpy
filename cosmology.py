@@ -1,5 +1,5 @@
 import numpy as np
-import iccpy.constants
+import constants
 import scipy.integrate
 
 OMEGA_L0 = OmegaLambda0            = 0.75#0.742
@@ -15,7 +15,7 @@ def _hubble_func(a):
     return np.sqrt(OMEGA_K0/(a*a) + OMEGA_M0/(a**3) + OMEGA_R0/(a**4) + OMEGA_L0);
 
 def hubble_0():
-    return 2.365766835364e-18 * iccpy.constants.UNIT_TIME
+    return 2.365766835364e-18 * constants.UNIT_TIME
     
 def hubble_param(a):
     return hubble_0() * _hubble_func(a)
@@ -44,7 +44,7 @@ def omega_k(a):
 
 def omega_crit(a):
     H = hubble_param(a)
-    return 3 * H**2 / (8 * np.pi * iccpy.constants.G) 
+    return 3 * H**2 / (8 * np.pi * constants.G) 
 
 def omega_crit0():
-    return 3 * hubble_0()**2 / (8 * np.pi * iccpy.constants.G) 
+    return 3 * hubble_0()**2 / (8 * np.pi * constants.G) 
