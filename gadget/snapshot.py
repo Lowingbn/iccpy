@@ -60,7 +60,8 @@ class GadgetBinaryHeader:
     def __init__(self, filename, format=1):
         """ Read the binary GADGET header """
         file = open(filename, mode='rb')
-        if format==2: file.seek(16) # Test
+        if format==2: 
+            file.seek(16) # skip 4 HEAD 264 4
         header = binary_snapshot_io.read_header(file)
         file.close()
         
@@ -77,7 +78,10 @@ class GadgetBinaryHeader:
 
         #Also find length of id
         f = open(filename, mode='rb')        
-        f.seek(256+24 + self.num_particles_file * 6 * self.dtype_width)
+        f.seek(256+24 + int(self.num_particles_file) * 6 * int(self.dtype_width))
+        if format==2:
+            f.seek(16*4,1) # skip marker prefixes (HEAD, POS, VEL, IDS)
+
         id_block_len = np.fromfile(f, _rtype(uint32, self._data['swap_endian']), 1)[0]
         if id_block_len/self.num_particles_file==4:
             self.long_ids = False
@@ -117,7 +121,7 @@ class GadgetBinaryBlock(object):
         self._offsets = offsets.copy()
         self._nparts = nparts.copy()
         self._data = [ 0 ] * 6
-        self._cum_nparts = np.hstack([np.zeros([len(self._filenames),1]), np.cumsum(self._nparts[:,:-1], axis=1)])
+        self._cum_nparts = np.hstack([np.zeros([len(self._filenames),1], dtype=self._nparts.dtype), np.cumsum(self._nparts[:,:-1], axis=1, dtype=np.int64)])
         
     def _load(self, key):
         count = 0
@@ -150,6 +154,7 @@ class GadgetBinaryBlock(object):
         #print self._data[key].nbytes/1024/1024
         
         self._loaded[key] = True
+
       
     def __getitem__(self, key):
         if not key>=0 and key<5:
@@ -221,7 +226,7 @@ class GadgetBinaryFormat1Snapshot:
         headers = [ GadgetBinaryHeader(self._files[i]) for i in range(len(self._files)) ]
         self._blocks = {}
                 
-        nparts = np.array([ header.num_particles for header in headers ])
+        nparts = np.array([ header.num_particles for header in headers ], dtype=int64)
         nparts_per_file = np.sum(nparts, axis=1)
         
         file_offsets = np.ones(len(self._files), dtype=np.uint32) * 256 + 8
@@ -310,11 +315,12 @@ class GadgetBinaryFormat2Snapshot:
         
     def __dir__(self): 
         if self._blocks is None:
-            self._load_blocks()   
+            self._load_blocks()
         return sorted(set((list(self.__dict__) + self._blocks.keys())))
         
     def _load_blocks(self):
-        headers = [ GadgetBinaryHeader(self._files[i], ,format=2) for i in range(len(self._files)) ]
+        headers = [ GadgetBinaryHeader(self._files[i], format=2) for i in range(len(self._files)) ]
+        block_keys = _get_all_format2_names(self._files[0], headers[0].swap_endian)
         self._blocks = {}
                 
         nparts = np.array([ header.num_particles for header in headers ])
@@ -331,7 +337,28 @@ class GadgetBinaryFormat2Snapshot:
         self._blocks['id'] = GadgetBinaryBlock(self, "id", 1, self.header.id_type, self._files, nparts, file_offsets)
         file_offsets += self.header.id_width * nparts_per_file + 8 + 16
         
-        #TODO: Finish loading the rest of the file
+        #Mass blocks are evil
+        masses = np.array([ header.mass for header in headers ])
+        nparts_mass = np.zeros_like(nparts)
+        nparts_mass[np.where(masses==0)] = nparts[np.where(masses==0)]
+
+        if np.sum(nparts_mass)!=0:
+            self._blocks['mass'] = GadgetBinaryBlock(self, "mass", 1, self.header.dtype, self._files, nparts_mass, file_offsets)
+            file_offsets += self.header.dtype_width * np.sum(nparts_mass, axis=1) + 8 + 16
+            #Need to set non-read masses
+            for i in range(6):
+                if np.sum(masses[:,i])!=0:
+                    self._blocks['mass']._loaded[i] = True
+                    self._blocks['mass']._data[i] = np.ones(headers[0].num_particles_total[i]) * headers[0].mass[i]  
+        else:
+            self._blocks['mass'] = self.header.mass
+        
+        for name in block_keys[5:]:
+            self._blocks[name] = GadgetBinaryBlock(self, name, 1, self.header.dtype, self._files, nparts, file_offsets)
+            file_offsets += self.header.dtype_width * nparts_per_file + 8 + 16
+
+            
+
         
         
     def __getattr__(self, name):        
@@ -344,7 +371,30 @@ class GadgetBinaryFormat2Snapshot:
         return self._blocks[name]
        
 ##########################################################################################       
-                
+def _get_all_format2_names(filename, swap_endian):
+    """ find all the block names in a gadget format-2 file """
+    u32 = _rtype(uint32, swap_endian)
+    f = open(filename, 'rb')
+    blocks = []
+    while True:
+        eight = f.read(4)
+        if len(eight)==0:
+            break
+        n = np.fromstring(eight, u32,1)[0]
+        assert(n==8)
+        name = f.read(4)
+
+        blocks.append(name)
+        count = np.fromfile(f, u32,1)[0]
+        f.read(4)
+        count2 = np.fromfile(f, u32,1)[0]
+        f.seek(count2+4, 1)
+    f.close()
+    return blocks
+
+
+
+
 def load_snapshot(filename="", directory="", snapnum=None, additional_blocks=None):
     """
     Returns a Gadget snapshot object. Loads both binary format 1 and format 2 snapshots.    
