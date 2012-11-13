@@ -110,12 +110,12 @@ class GadgetBinaryHeader:
             
 
 class GadgetBinaryBlock(object):
-    def __init__(self, parent, name, dim, dtype, filenames, nparts, offsets):
+    def __init__(self, parent, name, elements, dtype, filenames, nparts, offsets):
         self.snapshot = parent
         self.name = name
         self.dtype = dtype
         self.dtype_width = np.dtype(dtype).itemsize
-        self.dim = dim
+        self.elements = int(elements)
         self._loaded = np.zeros(6, dtype=np.bool)
         self._filenames = list(filenames)
         self._offsets = offsets.copy()
@@ -126,12 +126,10 @@ class GadgetBinaryBlock(object):
     def _load(self, key):
         count = 0
         #Allocate space to store data
-        if self.dim==1:
-            width = 1
+        if self.elements==1:
             self._data[key] = np.empty(np.sum(self._nparts[:,key]), dtype=self.dtype)
         else:
-            width = 3
-            self._data[key] = np.empty([np.sum(self._nparts[:,key]), 3], dtype=self.dtype)
+            self._data[key] = np.empty([np.sum(self._nparts[:,key]), self.elements], dtype=self.dtype)
             
         if np.sum(self._nparts[:,key])!=0:            
             #Go through each file loading the data
@@ -143,12 +141,13 @@ class GadgetBinaryBlock(object):
                 file.seek(self._offsets[i] + 4 + self.dtype_width * self._cum_nparts[i, key], 0)
             
                 #Read the data from the file and place it in the data array
-                data = np.fromfile(file, self.dtype, self._nparts[i, key]*width)
+                data = np.fromfile(file, self.dtype, self._nparts[i, key]*self.elements)
 
-                if self.dim==1:
+                if self.elements==1:
                     self._data[key][count:count+self._nparts[i, key]] = data
                 else:
-                    self._data[key][count:count+self._nparts[i, key]] = data.reshape(self._nparts[i, key], 3)
+                    self._data[key][count:count+self._nparts[i, key]] = data.reshape(self._nparts[i, key],
+                                                                                     self.elements)
                     
                 count += self._nparts[i, key]
         #print self._data[key].nbytes/1024/1024
@@ -231,10 +230,10 @@ class GadgetBinaryFormat1Snapshot:
         
         file_offsets = np.ones(len(self._files), dtype=np.uint32) * 256 + 8
         
-        self._blocks['pos'] = GadgetBinaryBlock(self, "pos", 2, self.header.dtype, self._files, nparts, file_offsets)
+        self._blocks['pos'] = GadgetBinaryBlock(self, "pos", 3, self.header.dtype, self._files, nparts, file_offsets)
         file_offsets += 3 * self.header.dtype_width * nparts_per_file + 8
         
-        self._blocks['vel'] = GadgetBinaryBlock(self, "vel", 2, self.header.dtype, self._files, nparts, file_offsets)
+        self._blocks['vel'] = GadgetBinaryBlock(self, "vel", 3, self.header.dtype, self._files, nparts, file_offsets)
         file_offsets += 3 * self.header.dtype_width * nparts_per_file + 8
         
         self._blocks['id'] = GadgetBinaryBlock(self, "id", 1, self.header.id_type, self._files, nparts, file_offsets)
@@ -279,7 +278,7 @@ class GadgetBinaryFormat2Snapshot:
     A binary format 2 Gadget Snapshot
     """
 
-    def __init__(self, directory="", filename="", snapnum=None, files=None):
+    def __init__(self, directory="", filename="", snapnum=None, files=None, label_table=None):
         """
         Creates a Gadget binary snapshot object and loads the header
         
@@ -288,7 +287,9 @@ class GadgetBinaryFormat2Snapshot:
             filename:          -- the complete filename or the root of the snapshot filenames
             snapnum:           -- which snapshot to load
             files:             -- a list of files to load
-        
+            label_table:      -- a dictionary of additional labels (e.g. {"ACCE":(3, (1,1,1,1,1,1))})
+                                  which specifies the number of fields and which particles this label is for.
+
         A directory and/or a filename or a list of files must be specified. If there is more than one snapshot in the 
         directory the snapshot number must also be specified.
         """
@@ -306,7 +307,8 @@ class GadgetBinaryFormat2Snapshot:
         
         del self.header._data['num_particles']
         del self.header.num_particles_file
-
+        
+        self._label_table = label_table
     def __str__(self):
         return self.__repr__()
     
@@ -322,19 +324,19 @@ class GadgetBinaryFormat2Snapshot:
         headers = [ GadgetBinaryHeader(self._files[i], format=2) for i in range(len(self._files)) ]
         block_keys = _get_all_format2_names(self._files[0], headers[0].swap_endian)
         self._blocks = {}
-                
+        print 'Keys in file', block_keys
         nparts = np.array([ header.num_particles for header in headers ])
         nparts_per_file = np.sum(nparts, axis=1)
         
         file_offsets = np.ones(len(self._files), dtype=np.uint32) * 256 + 8 + 32
         
-        self._blocks['pos'] = GadgetBinaryBlock(self, "pos", 2, self.header.dtype, self._files, nparts, file_offsets)
+        self._blocks[block_keys[1]] = GadgetBinaryBlock(self, "pos", 3, self.header.dtype, self._files, nparts, file_offsets)
         file_offsets += 3 * self.header.dtype_width * nparts_per_file + 8 + 16
         
-        self._blocks['vel'] = GadgetBinaryBlock(self, "vel", 2, self.header.dtype, self._files, nparts, file_offsets)
+        self._blocks[block_keys[2]] = GadgetBinaryBlock(self, "vel", 3, self.header.dtype, self._files, nparts, file_offsets)
         file_offsets += 3 * self.header.dtype_width * nparts_per_file + 8 + 16
         
-        self._blocks['id'] = GadgetBinaryBlock(self, "id", 1, self.header.id_type, self._files, nparts, file_offsets)
+        self._blocks[block_keys[3]] = GadgetBinaryBlock(self, "id", 1, self.header.id_type, self._files, nparts, file_offsets)
         file_offsets += self.header.id_width * nparts_per_file + 8 + 16
         
         #Mass blocks are evil
@@ -343,33 +345,61 @@ class GadgetBinaryFormat2Snapshot:
         nparts_mass[np.where(masses==0)] = nparts[np.where(masses==0)]
 
         if np.sum(nparts_mass)!=0:
-            self._blocks['mass'] = GadgetBinaryBlock(self, "mass", 1, self.header.dtype, self._files, nparts_mass, file_offsets)
+            assert(block_keys[4]=='MASS')  # should be mass
+            mass = block_keys[4]
+
+            self._blocks[mass] = GadgetBinaryBlock(self, "mass", 1, self.header.dtype, self._files, nparts_mass, file_offsets)
             file_offsets += self.header.dtype_width * np.sum(nparts_mass, axis=1) + 8 + 16
             #Need to set non-read masses
             for i in range(6):
                 if np.sum(masses[:,i])!=0:
-                    self._blocks['mass']._loaded[i] = True
-                    self._blocks['mass']._data[i] = np.ones(headers[0].num_particles_total[i]) * headers[0].mass[i]  
+                    self._blocks[mass]._loaded[i] = True
+                    self._blocks[mass]._data[i] = np.ones(headers[0].num_particles_total[i]) * headers[0].mass[i]  
         else:
-            self._blocks['mass'] = self.header.mass
+            # there is no mass block
+            self._blocks[mass] = self.header.mass
         
-        for name in block_keys[5:]:
-            self._blocks[name] = GadgetBinaryBlock(self, name, 1, self.header.dtype, self._files, nparts, file_offsets)
-            file_offsets += self.header.dtype_width * nparts_per_file + 8 + 16
+        for i in range(5, len(block_keys)):
+            name = block_keys[i]
+            if name not in self._label_table:
+                raise KeyError, "<%s> is not a known label (try adding to the label_table?)"%name 
 
-            
+            elements, used_parts = self._label_table[name]
 
-        
-        
-    def __getattr__(self, name):        
+            ## TODO this next assertion should probably go in to a "GadgetBinaryBlockFormat2"
+            ## to be cleaner.
+            f = open(self._files[0], 'rb')
+            f.seek(file_offsets[0]-12)
+            found_name = f.read(4)
+            #num_bytes = np.fromfile(f, uint32, 1)
+            #print 'bytes to read', num_bytes
+            f.close()
+            if name!=found_name:
+                raise Exception("Expected <%s> in file but found <%s> (perhaps due to incorrect expected length of records for <%s> ?"%(name, found_name, block_keys[i-1]))
+            f.close()
+            #######
+
+
+
+            nparts_var = nparts * used_parts #[npt * present for npt, present in zip(nparts, (1,0,0,0,0,0))]
+            nparts_var_per_file = np.sum(nparts_var, axis=1)
+            #print 'num parts',  (num_bytes-8)/float(nparts_var_per_file)
+            self._blocks[name] = GadgetBinaryBlock(self, name, elements, self.header.dtype, self._files, nparts_var, file_offsets)
+            file_offsets += self.header.dtype_width * nparts_var_per_file * elements + 8 + 16
+
+    
+    def __iter__(self):
         if self._blocks is None:
             self._load_blocks()
-    
-        if name not in self._blocks:
-            raise KeyError, "Unknown block name %s" % name
+
+        return iter(self._blocks.keys())
+
+    def __getitem__(self, name):
+        if self._blocks is None:
+            self._load_blocks()
         
         return self._blocks[name]
-       
+
 ##########################################################################################       
 def _get_all_format2_names(filename, swap_endian):
     """ find all the block names in a gadget format-2 file """
@@ -395,7 +425,7 @@ def _get_all_format2_names(filename, swap_endian):
 
 
 
-def load_snapshot(filename="", directory="", snapnum=None, additional_blocks=None):
+def load_snapshot(filename="", directory="", snapnum=None, additional_blocks=None, label_table=None):
     """
     Returns a Gadget snapshot object. Loads both binary format 1 and format 2 snapshots.    
     Keyword arguments:
@@ -405,6 +435,10 @@ def load_snapshot(filename="", directory="", snapnum=None, additional_blocks=Non
         snapnum:           -- which snapshot to load
         additional_blocks  -- a list of blocks other than the basic ones that exist in the 
                               snapshot (used for format 1 only)
+        label_table:       -- a dictionary of additional labels (e.g. {"ACCE":(3, (1,1,1,1,1,1))})
+                              which specifies the number of fields and which particles this label is for.
+                              (used for format 2 only)
+
     """
     
     files = _get_files(directory, filename, snapnum)
@@ -413,7 +447,7 @@ def load_snapshot(filename="", directory="", snapnum=None, additional_blocks=Non
     if format==1:
         return GadgetBinaryFormat1Snapshot(files=files, additional_blocks=additional_blocks)
     elif format==2:
-        return GadgetBinaryFormat2Snapshot(files=files)
+        return GadgetBinaryFormat2Snapshot(files=files, label_table=label_table)
         
 def load_snapshot_files(filename="", directory="", snapnum=None, additional_blocks=None):
     files = _get_files(directory, filename, snapnum)
