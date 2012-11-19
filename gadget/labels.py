@@ -48,4 +48,6 @@ cecilia_labels = {
 "ANRA":(3, allparts),
 "LACA":(20, allparts),
 "SHIN":(3, allparts),
-"INDE":(1, allparts)}
+"INDE":(1, allparts),
+"EGYP":(1, gas_stars),
+"EGYC":(1, gas_stars)}
