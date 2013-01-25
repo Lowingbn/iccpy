@@ -124,7 +124,7 @@ class GadgetBinaryBlock(object):
         self._cum_nparts = np.hstack([np.zeros([len(self._filenames),1], dtype=self._nparts.dtype), np.cumsum(self._nparts[:,:-1], axis=1, dtype=np.int64)])
         
     def _load(self, key):
-        count = 0
+
         #Allocate space to store data
         if self.elements==1:
             self._data[key] = np.empty(np.sum(self._nparts[:,key]), dtype=self.dtype)
@@ -133,12 +133,13 @@ class GadgetBinaryBlock(object):
             
         if np.sum(self._nparts[:,key])!=0:            
             #Go through each file loading the data
+            count = 0
             for i, filename in enumerate(self._filenames):
                 #Open the file
                 file = open(filename, mode='rb')
             
                 #Seek to the right place in the file
-                file.seek(self._offsets[i] + 4 + self.dtype_width * self._cum_nparts[i, key], 0)
+                file.seek(self._offsets[i] + 4 + self.dtype_width * self._cum_nparts[i, key] * self.elements, 0)
             
                 #Read the data from the file and place it in the data array
                 data = np.fromfile(file, self.dtype, self._nparts[i, key]*self.elements)
@@ -148,7 +149,8 @@ class GadgetBinaryBlock(object):
                 else:
                     self._data[key][count:count+self._nparts[i, key]] = data.reshape(self._nparts[i, key],
                                                                                      self.elements)
-                    
+                file.close()
+
                 count += self._nparts[i, key]
         #print self._data[key].nbytes/1024/1024
         
@@ -168,6 +170,7 @@ class GadgetBinaryBlock(object):
 def _determine_binary_format(filename):
     f = open(filename, mode='rb')
     r = np.fromfile(f, np.uint32, 1)[0]
+    f.close()
     if r==8 or r==134217728:
         return 2
     elif r==256 or r==65536:
