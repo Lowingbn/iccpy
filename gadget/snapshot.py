@@ -228,7 +228,7 @@ class GadgetBinaryFormat1Snapshot:
         headers = [ GadgetBinaryHeader(self._files[i]) for i in range(len(self._files)) ]
         self._blocks = {}
                 
-        nparts = np.array([ header.num_particles for header in headers ], dtype=int64)
+        nparts = np.array([ header.num_particles for header in headers ], dtype=np.int64)
         nparts_per_file = np.sum(nparts, axis=1)
         
         file_offsets = np.ones(len(self._files), dtype=np.uint32) * 256 + 8
