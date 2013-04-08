@@ -37,7 +37,7 @@ def density_profile(pos, particle_mass=1, n_bins=20, centre=None, r_min=None, r_
         bin_vol = r_to_dV(r_bins)[1:]
         bin_dens = (bin_mass * particle_mass) / bin_vol
     
-    return bin_dens, r_bins[1:] - np.diff(r_bins)/2
+    return bin_dens, r_bins[1:] - np.diff(r_bins)/2, bin_vol
     
 def r_to_dV(rad):
     """ find differential vol from radii """

@@ -314,7 +314,7 @@ class GadgetBinaryFormat2Snapshot:
         return sorted(set((list(self.__dict__) + self._blocks.keys())))
         
     def _load_blocks(self):
-        headers = [ GadgetBinaryHeader(self._files[i], ,format=2) for i in range(len(self._files)) ]
+        headers = [ GadgetBinaryHeader(self._files[i], format=2) for i in range(len(self._files)) ]
         self._blocks = {}
                 
         nparts = np.array([ header.num_particles for header in headers ])

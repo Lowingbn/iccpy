@@ -13,7 +13,7 @@ class Group(object):
         self.offset = block["offset"][idx]        
         
     def __getattr__(self, name):
-        if name=="id":
+        if name=="ids":
             #Only load the ids if we need them
             if self._parent.ids is None: self._parent._load_ids()
             #Return a slice of the parent array
