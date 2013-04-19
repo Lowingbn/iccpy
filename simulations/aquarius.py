@@ -23,7 +23,7 @@ def get_dir(sim_name):
     return "/gpfs/data/aquarius/halo_data/Aq-%s/%c/" % (sim_label[sim_name[0:3]], sim_name[3])
 
 def load_last_snapshot(sim_name):
-    return iccpy.gadget.Snapshot(directory=get_dir(sim_name), snapnum=last_snapnum[sim_name])
+    return iccpy.gadget.load_snapshot(directory=get_dir(sim_name), snapnum=last_snapnum[sim_name])
 
 def get_subhaloes(sim_name, snapnum=None):
     if snapnum==None:
