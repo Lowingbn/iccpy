@@ -68,7 +68,7 @@ def find_group_membership(ids, groupids, length, offset, find_mbrank=False):
 
 class SubfindCatalogue:
     def __init__(self, directory, snapshot_num, float_type=np.float32,
-                 SO_VEL_DISPERSIONS=False, SO_BAR_INFO=False):
+                 SO_VEL_DISPERSIONS=False, SO_BAR_INFO=False, SAVE_MASSTAB=False):
         self.directory = directory
         self.snapshot_num = snapshot_num
         self.fof_group = []
@@ -81,7 +81,7 @@ class SubfindCatalogue:
 
         for i in range(num_files):
             filename = "%s/groups_%03d/subhalo_tab_%03d.%d" % (self.directory, self.snapshot_num, self.snapshot_num, i)
-            groups, subhaloes = self._read_subtab_file(filename, i, snapshot_num, float_type, self.id_size, SO_VEL_DISPERSIONS, SO_BAR_INFO)
+            groups, subhaloes = self._read_subtab_file(filename, i, snapshot_num, float_type, self.id_size, SO_VEL_DISPERSIONS, SO_BAR_INFO, SAVE_MASSTAB)
             self.subhalo.extend(subhaloes)
             self.fof_group.extend(groups)
 
@@ -168,9 +168,9 @@ class SubfindCatalogue:
         self.ids = np.concatenate(id_list)
         if byteswap: self.ids = self.ids.byteswap()
 
-    def _read_subtab_file(self, fname, filenum, snapnum, float_type=np.float32, id_size=4, SO_VEL_DISPERSIONS=False,
-                          SO_BAR_INFO=False):
-        f = open(fname,"r")
+    def _read_subtab_file(self, fname, filenum, snapnum, float_type, id_size, SO_VEL_DISPERSIONS,
+                          SO_BAR_INFO, SAVE_MASSTAB):
+        f = open(fname,"rb")
         # Header
         ngroups    = np.fromfile(f, dtype=np.int32, count=1)[0]
         totngroups = np.fromfile(f, dtype=np.int32, count=1)[0]
@@ -247,6 +247,9 @@ class SubfindCatalogue:
             raise Exception("id_size must be 4 or 8!")
 
         subhalo_block["grnr"] = np.fromfile(f, dtype=np.int32, count=nsubgroups)
+
+        if SAVE_MASSTAB:
+            subhalo_block["masstab"] = np.fromfile(f, dtype=float_type, count=6*nsubgroups).reshape((nsubgroups,6))
 
         # Byteswap data if necessary
         if byteswap:
