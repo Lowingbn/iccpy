@@ -250,7 +250,8 @@ class SubfindCatalogue:
 
         if SAVE_MASSTAB:
             subhalo_block["masstab"] = np.fromfile(f, dtype=float_type, count=6*nsubgroups).reshape((nsubgroups,6))
-
+        
+        f.close()
         # Byteswap data if necessary
         if byteswap:
             for key in fof_block.keys():
