@@ -472,6 +472,37 @@ class GadgetBinaryFormat2Snapshot:
 ##########################################################################################       
 
 
+def load_ICsnapshot(InitCondFileName):
+    """
+    Load a Gadget initial conditions file (just a Gadget snapshot with some fields missing)
+    InitCondFileName - path to file, e.g. 'galaxy.dat'. Note this is used even if the files
+                       are 'galaxy.dat.0', etc.
+    ICFormat         - 1 or 2. 
+    """
+    # Find if 1 or more files
+    if not os.path.exists(InitCondFileName):
+        files = []
+        # if more than 1000000 parts to IC snapshot then we are in trouble!
+        for i in range(1000000):
+            name = '.'.join((InitCondFileName, '%d'%i))
+            if not os.path.exists(name):
+                break
+            files.append(name)
+
+        if len(files)==0:
+            raise Exception('Could not find IC file %s or %s.0'%(InitCondFileName, InitCondFileName))
+    else:
+        files = (InitCondFileName,)
+
+    print 'files', files
+    format = _determine_binary_format(files[0])
+
+    if format==1:
+        return GadgetBinaryFormat1Snapshot(files=files)
+    elif format==2:
+        return GadgetBinaryFormat2Snapshot(files=files)
+
+    
 
 def load_snapshot(filename="", directory="", snapnum=None, additional_blocks=None, label_table=None):
     """
