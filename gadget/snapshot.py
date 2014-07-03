@@ -1,6 +1,5 @@
 import numpy as np
 import os
-import h5py
 import re
 
 import binary_snapshot_io
