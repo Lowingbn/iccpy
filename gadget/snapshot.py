@@ -308,7 +308,8 @@ class GadgetBinaryFormat1Snapshot:
         nparts = np.array([ header.num_particles for header in headers ], dtype=np.int64)
         nparts_per_file = np.sum(nparts, axis=1)
         
-        file_offsets = np.ones(len(self._files), dtype=np.uint32) * 256 + 8
+        file_offsets = np.empty(len(self._files), dtype=np.int64)
+        file_offsets[:] = 256 + 8
         
         self._blocks['pos'] = GadgetBinaryBlock(self, "pos", 3, self.header.dtype, self._files, nparts, file_offsets)
         file_offsets += 3 * self.header.dtype_width * nparts_per_file + 8
