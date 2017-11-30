@@ -427,7 +427,13 @@ class GadgetBinaryFormat2Snapshot:
         # Go through each of the blocks found in the file and set a GadgetBinaryBlock for them
         for name in self.header._file_offsets.keys():
 
-            file_offsets = np.array([h._file_offsets[name] for h in headers])
+            file_offsets = []
+            for h in headers:
+                if name in h._file_offsets:
+                    file_offsets.append(h._file_offsets[name])
+                else:
+                    file_offsets.append(0)
+            file_offsets = np.array(file_offsets)
 
             # First check for standard labels, if not then look in the label_table
             if name=='HEAD':
