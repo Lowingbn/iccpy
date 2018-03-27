@@ -36,7 +36,7 @@ def _get_files(directory, filename="", snapnum=None):
         
         expr = re.compile(".+_%03d.(\d+)" % snapnum)
         files = [ full_dir + name for name in filelist if expr.match(name)!=None ]
-        return sorted(files, key=lambda a:int(a.split('.')[1]))
+        return sorted(files, key=lambda a:int(a.split('.')[-1]))
     
     #Try directory/snapshot_XXX
     if directory!="" and filename!="" and snapnum!=None:
@@ -48,7 +48,7 @@ def _get_files(directory, filename="", snapnum=None):
         expr = re.compile("%s_%03d.(\d+)" % (filename, snapnum))
         files = [ full_dir+name for name in filelist if expr.match(name)!=None ]
         if len(files)!=0:
-            return sorted(files, key=lambda a:int(a.split('.')[1]))
+            return sorted(files, key=lambda a:int(a.split('.')[-1]))
 
     if snapnum==None:
         errorString = "%s %s" % (directory, filename)
