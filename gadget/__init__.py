@@ -1,2 +1,3 @@
-from snapshot import save_snapshot, load_snapshot_files, load_snapshot, load_ICsnapshot
-from subfind import SubfindCatalogue
+from __future__ import absolute_import
+from .snapshot import save_snapshot, load_snapshot_files, load_snapshot, load_ICsnapshot
+from .subfind import SubfindCatalogue

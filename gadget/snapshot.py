@@ -1,8 +1,9 @@
+from __future__ import print_function
 import numpy as np
 import os
 import re
 
-import binary_snapshot_io
+from . import binary_snapshot_io
 
 from numpy import uint32, uint64, float64, float32
 
@@ -103,7 +104,7 @@ class GadgetBinaryHeader:
     
     def __getattr__(self, name):
         if name not in self._data:
-            raise KeyError, "'%s'" % name
+            raise KeyError("'%s'" % name)
         return self._data[name]
             
 class GadgetBinaryHeaderFormat2:
@@ -182,7 +183,7 @@ class GadgetBinaryHeaderFormat2:
     
     def __getattr__(self, name):
         if name not in self._data:
-            raise KeyError, "'%s'" % name
+            raise KeyError("'%s'" % name)
         return self._data[name]
             
 
@@ -236,7 +237,7 @@ class GadgetBinaryBlock(object):
       
     def __getitem__(self, key):
         if not key>=0 and key<5:
-            raise IndexError, "Particle type index out of range %d" % i
+            raise IndexError("Particle type index out of range %d" % i)
     
         if not self._loaded[key]:
             self._load(key)
@@ -253,7 +254,7 @@ def _determine_binary_format(filename):
     elif r==256 or r==65536:
         return 1
     else:
-        raise IOError, "File corrupt. First integer is: " + str(r)
+        raise IOError("File corrupt. First integer is: " + str(r))
 
 class GadgetBinaryFormat1Snapshot:
     """
@@ -339,7 +340,7 @@ class GadgetBinaryFormat1Snapshot:
         if self._additional_blocks is not None:
             for name in self._additional_blocks:
                 if name not in _block_element_nums:
-                    raise KeyError, "Unknown block name %s" % name
+                    raise(KeyError, "Unknown block name %s" % name)
             
                 dim = 1 if _block_element_nums[name]==1 else 2
                 self._blocks[name] = GadgetBinaryBlock(self, name, dim, self.header.dtype, self._files, nparts, file_offsets)
@@ -350,7 +351,7 @@ class GadgetBinaryFormat1Snapshot:
             self._load_blocks()
     
         if name not in self._blocks:
-            raise KeyError, "Unknown block name %s" % name
+            raise(KeyError, "Unknown block name %s" % name)
         
         return self._blocks[name]
         
@@ -461,7 +462,7 @@ class GadgetBinaryFormat2Snapshot:
 
                 self._blocks[name] = GadgetBinaryBlock(self, name, elements, self.header.dtype, self._files, nparts_var, file_offsets)
             else:
-                print "Warning: <%s> is not a known label (try adding to the label_table?)"%name 
+                print("Warning: <%s> is not a known label (try adding to the label_table?)"%name)
     
     def __iter__(self):
         if self._blocks is None:
@@ -500,7 +501,7 @@ def load_ICsnapshot(InitCondFileName):
     else:
         files = (InitCondFileName,)
 
-    print 'files', files
+    print('files', files)
     format = _determine_binary_format(files[0])
 
     if format==1:

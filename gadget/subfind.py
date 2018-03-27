@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 import time
 import iccpy.utils
@@ -21,7 +22,7 @@ class Group(object):
         elif name in self._block:
             return self._block[name][self._idx]
         else:
-            raise KeyError, "Unknown attribute name %s" % name
+            raise KeyError("Unknown attribute name %s" % name)
             
     def __repr__(self):
         return 'iccpy.gadget.subfind.Group'
@@ -280,5 +281,5 @@ class SubfindCatalogue:
 
 if __name__=="__main__":
     cat = SubfindCatalogue("/gpfs/data/aquarius/halo_data/Aq-A/2", 1023)
-    print "Step 1"
-    print cat.subhalo[1].id
+    print("Step 1")
+    print(cat.subhalo[1].id)

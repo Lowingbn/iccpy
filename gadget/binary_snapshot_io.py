@@ -1,3 +1,4 @@
+from __future__ import print_function
 import numpy as np
 from numpy import uint32, uint64, float64, float32
 
@@ -16,7 +17,7 @@ header_sizes_swap = (('>u4', 6), ('>f8', 6), ('>f8', 1), ('>f8', 1), ('>u4', 1),
 def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=False, pot=False, particle_types=None):
     """ Reads a binary gadget file """
     f = open(filename, mode='rb')
-    print "Loading file %s" % filename
+    print("Loading file %s" % filename)
 
     res = {} # dictionary to hold data
 
@@ -26,18 +27,18 @@ def read_snapshot_file(filename, gas=False, ics=False, cooling=False, accel=Fals
     nparts = header['num_particles']
     masses = header['mass']
 
-    print 'Particles', nparts
-    print 'Masses', masses
+    print('Particles', nparts)
+    print('Masses', masses)
 
     total = nparts.sum()
-    print 'Total particles', total
+    print('Total particles', total)
     
     if header['flag_doubleprecision']:
         precision = float64
-        print 'Precision: Double'
+        print('Precision: Double')
     else:
         precision = float32
-        print 'Precision: Float'
+        print('Precision: Float')
         
     if particle_types is None:
         ranges = None
@@ -94,13 +95,13 @@ def write_snapshot_file(filename, header, pos, vel, ids, masses=None, extra_data
     # do some checks on the header
     for name, size in zip(header_names, header_sizes):
         if name not in header:
-            print 'Missing %s in header file' % name
+            print('Missing %s in header file' % name)
             raise Exception('Missing %s in header file' % name)
 
         if np.array(header[name]).size != size[1]:
             msg = 'Header %s should contain %d elements, %d found' % \
                     (name, size[1], np.array(header[name]).size) 
-            print msg
+            print(msg)
             raise Exception(msg)
 
     # do some checks on the data
@@ -177,7 +178,7 @@ def readIDs(f, count, ranges=None, swap_endian=False):
     elif data_size / 8 == count: dtype = uint64
     else: raise Exception('Incorrect number of IDs requested')
     
-    print "ID type: ", dtype
+    print("ID type: ", dtype)
     
     return readu(f, dtype, ranges, 1, swap_endian)
 
