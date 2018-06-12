@@ -3,8 +3,7 @@ import pylab as pl
 # 240 pt figures (3.32 inches)
 latexParams = {'figure.dpi':150,
                'figure.figsize':[3.32,2.49],
-               'text.usetex':True,
-               'text.fontsize':8,
+               'text.usetex':False,
                'font.size':8,
                'axes.labelsize':8,
                'figure.subplot.top':0.95,
